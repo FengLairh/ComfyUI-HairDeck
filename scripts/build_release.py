@@ -6,7 +6,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 TOP_FILES = ['__init__.py', 'nodes.py', 'runtime.py', 'exporting.py', 'generation.py', 'output.py', 'install_models.py', 'requirements.txt',
-             'pyproject.toml', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'README.md', 'VALIDATION.md',
+             'pyproject.toml', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'README.md', 'README.en.md', 'VALIDATION.md',
              'extra_model_paths.yaml.example', '.gitignore', 'CHANGELOG.md']
 FOLDERS = ['_vendor', 'scripts', 'tests', 'example_workflows', 'docs', 'web']
 SKIP = {'__pycache__', '.git', '.runtime', '.pytest_cache'}

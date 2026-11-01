@@ -1,5 +1,7 @@
 # ComfyUI-HairDeck
 
+**简体中文** | [English](README.en.md)
+
 三个原生 ComfyUI 节点：**模型加载 → 生成头发 → 输出保存**。
 从单张角色图片生成风格化发片、弹簧骨骼，集中导出 GLB / VRM 和动画。
 
