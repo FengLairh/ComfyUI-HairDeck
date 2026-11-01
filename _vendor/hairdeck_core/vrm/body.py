@@ -66,6 +66,8 @@ def body(path=None):
     if path not in _CACHE:
         b = json.load(open(path))
         b.update(vrm=_abs(b['vrm']), dir=_abs(b['dir']), b=list(map(float, b['b'])), k=float(b['k']), h=int(b['h']))
+        if b.get('head_mesh'):
+            b['head_mesh'] = _abs(b['head_mesh'])
         _CACHE[path] = b
     return _CACHE[path]
 

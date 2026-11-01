@@ -16,7 +16,7 @@ def static_prompt(image, seed=0):
         '3': {'class_type': 'HairDeckSave', 'inputs': {'result': ['2', 0], 'format': 'GLB',
                                                     'filename_prefix': 'HairDeck/three_node_test', 'color': 'auto',
                                                     'show_head': False, 'show_chains': False,
-                                                    'save_debug': True, 'blender_path': ''}},
+                                                    'save_debug': True, 'blender_path': '', 'head_profile': 'auto'}},
     }
 
 

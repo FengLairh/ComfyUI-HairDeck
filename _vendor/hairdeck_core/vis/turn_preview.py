@@ -146,6 +146,8 @@ def preview(cards_json, chains_json, colour, out, show_chains=False, body=None):
     W = W_HEAD * m
     piv = (np.array(fit['head_joint']) * k + b) * m
     proxy, pc = head_proxy(*canonical())
+    if bd.get('head_mesh'):
+        proxy = trimesh.load(bd['head_mesh'], force='mesh')
     proxy_V, proxy_F = np.asarray(proxy.vertices) * m, np.asarray(proxy.faces)
     sphere = (pc * m, 0.45 * W)
     cards = [(np.asarray(c['seq'], np.float64), 1 if c['shape'] == 'triangle' else 0) for c in json.load(open(cards_json))]
@@ -213,7 +215,10 @@ def preview(cards_json, chains_json, colour, out, show_chains=False, body=None):
         for dd, kk in ((d + np.array([-0.5, 0.8, 0]), 2.4), (d + np.array([0.8, 0, 0]), 0.8), (-d + np.array([0, 0.5, 0]), 1.2)):
             s.add(pyrender.DirectionalLight(color=np.ones(3), intensity=kk), pose=look(tgt + dd, tgt))
         s.add(flat_mesh(X[fr], F, colour))
-        s.add(flat_mesh(np.einsum('ij,mj->mi', R[fr], proxy_V - piv) + piv, proxy_F, np.array([0.72, 0.72, 0.72]), False))
+        head_vertices = np.einsum('ij,mj->mi', R[fr], proxy_V - piv) + piv
+        head_shape = trimesh.Trimesh(head_vertices, proxy_F, process=False)
+        head_material = pyrender.MetallicRoughnessMaterial(baseColorFactor=[.72, .72, .72, 1.], roughnessFactor=.8)
+        s.add(pyrender.Mesh.from_trimesh(head_shape, material=head_material, smooth=True))
         if show_chains:
             for (heads, _), c in zip(sim, chains):
                 for q in heads[fr]:

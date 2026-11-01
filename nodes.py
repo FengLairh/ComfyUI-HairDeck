@@ -5,7 +5,7 @@ import nodes as comfy_nodes
 import folder_paths
 from comfy_api.latest import ComfyExtension, io, ui, Types
 
-from . import runtime, generation, output
+from . import runtime, generation, output, heads
 
 MODEL = io.Custom('HAIRDECK_MODEL')
 RESULT = io.Custom('HAIRDECK_RESULT')
@@ -99,13 +99,16 @@ class HairDeckSave(io.ComfyNode):
                                  io.Boolean.Input('show_chains', display_name='显示骨骼线', default=False, advanced=True),
                                  io.Boolean.Input('save_debug', display_name='保存过程图和曲线数据', default=True, advanced=True),
                                  io.String.Input('blender_path', display_name='Blender 路径', default='', advanced=True,
-                                                 tooltip='VRM 导出使用；留空时自动查找模型包中的便携工具。')],
+                                                 tooltip='VRM 导出使用；留空时自动查找模型包中的便携工具。'),
+                                 io.Combo.Input('head_profile', display_name='基础头模', optional=True,
+                                                options=heads.choices(runtime.bundles().values()), default='auto',
+                                                tooltip='auto 使用本机默认头模；upstream 使用原始参考头模。')],
                          hidden=[io.Hidden.prompt, io.Hidden.extra_pnginfo],
                          outputs=[io.File3DGLB.Output(display_name='GLB 模型'), io.String.Output(display_name='结果目录')])
 
     @classmethod
-    def execute(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path):
-        saved = output.save(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path)
+    def execute(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path, head_profile='auto'):
+        saved = output.save(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path, head_profile)
         return io.NodeOutput(Types.File3D(str(saved.model)), str(saved.directory), ui=saved.ui)
 
     @classmethod

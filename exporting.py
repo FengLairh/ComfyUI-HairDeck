@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import trimesh
 
 from PIL import Image
 import folder_paths
@@ -39,12 +40,13 @@ def validate(hair, rig, color):
     return [int(color[index:index + 2], 16) / 255 for index in (1, 3, 5)]
 
 
-def save_glb(hair, rig, show_head, color, prefix):
+def save_glb(hair, rig, show_head, color, prefix, head=None):
     color = validate(hair, rig, color)
     output, _ = output_path(prefix, 'glb')
     with paths.use(hair.root):
+        head_mesh = (trimesh.load(str(head.mesh), force='mesh') if head else glb.head_trimesh()) if show_head else None
         glb.write_glb(str(output), glb.hair_trimesh(hair.cards, color),
-                      glb.head_trimesh() if show_head else None,
+                      head_mesh,
                       glb.chain_trimesh(rig.chains) if rig and rig.chains else None)
     return output
 
@@ -76,13 +78,13 @@ def work_directory(hair, rig):
     return directory
 
 
-def save_vrm(hair, rig, color, prefix, blender_path):
+def save_vrm(hair, rig, color, prefix, blender_path, head=None):
     color = validate(hair, rig, color)
     blender = resolve_blender(hair.root, blender_path)
     directory = work_directory(hair, rig)
     output, _ = output_path(prefix, 'vrm')
     with paths.use(hair.root, blender=blender):
-        result = vrm.export_vrm(str(directory), hair.seed, color)
+        result = vrm.export_vrm(str(directory), hair.seed, color, body=str(head.body) if head else None)
     if not result['ok']:
         raise RuntimeError('VRM 结构检查失败：' + '; '.join(result['problems']))
     shutil.copyfile(result['vrm'], output)
@@ -92,11 +94,11 @@ def save_vrm(hair, rig, color, prefix, blender_path):
     return output, image_tensor(Image.open(preview_path))
 
 
-def save_motion(hair, rig, show_chains, color, prefix):
+def save_motion(hair, rig, show_chains, color, prefix, head=None):
     color = validate(hair, rig, color)
     directory = work_directory(hair, rig)
     output, saved = output_path(prefix, 'mp4')
     with paths.use(hair.root):
-        result = vrm.turn_preview(str(directory), hair.seed, color, show_chains=show_chains)
+        result = vrm.turn_preview(str(directory), hair.seed, color, show_chains=show_chains, body=str(head.body) if head else None)
     shutil.copyfile(result['out'], output)
     return output, saved

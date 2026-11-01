@@ -14,7 +14,7 @@ from comfy_api.latest import io, ui
 from hairdeck_core import paths
 from hairdeck_core.cards.mesh import cards_to_json
 from hairdeck_core.vrm import export as vrm
-from . import exporting, runtime
+from . import exporting, runtime, heads
 
 FORMATS = ['GLB', 'GLB + VRM', 'GLB + VRM + 动画']
 
@@ -63,22 +63,23 @@ def glb_preview(hair, model_path, destination, color):
     return runtime.image_tensor(Image.open(destination))
 
 
-def save(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path):
+def save(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path, head_profile='auto'):
     if format not in FORMATS:
         raise ValueError('不支持的保存格式。')
     animated = format != 'GLB'
     if (animated or show_chains) and result.rig is None:
         raise ValueError('请在生成节点开启“生成弹簧骨骼”，然后重新生成。')
     exporting.validate(result.hair, result.rig, color)
+    head = heads.resolve(result.hair.root, head_profile)
     if animated:
         exporting.resolve_blender(result.hair.root, blender_path)
     directory = new_directory(filename_prefix)
     relative = directory.relative_to(Path(folder_paths.get_output_directory()).resolve()).as_posix()
     files = []
-    model_path = exporting.save_glb(result.hair, result.rig if show_chains else None, show_head, color, relative + '/hair')
+    model_path = exporting.save_glb(result.hair, result.rig if show_chains else None, show_head, color, relative + '/hair', head)
     files.append(file_entry(model_path, 'GLB 模型', 'model'))
     if animated:
-        avatar_path, preview = exporting.save_vrm(result.hair, result.rig, color, relative + '/avatar', blender_path)
+        avatar_path, preview = exporting.save_vrm(result.hair, result.rig, color, relative + '/avatar', blender_path, head)
         files.append(file_entry(avatar_path, 'VRM 角色', 'model'))
         files.append(file_entry(avatar_path.with_suffix('.check.json'), 'VRM 检查记录', 'data'))
     else:
@@ -87,7 +88,7 @@ def save(cls, result, format, filename_prefix, color, show_head, show_chains, sa
                                              folder_type=io.FolderType.output, cls=cls)[0]
     files.append(dict(primary, label='模型多视图', kind='image'))
     if format == 'GLB + VRM + 动画':
-        motion_path, motion = exporting.save_motion(result.hair, result.rig, show_chains, color, relative + '/motion')
+        motion_path, motion = exporting.save_motion(result.hair, result.rig, show_chains, color, relative + '/motion', head)
         files.append(dict(motion, label='动画预览', kind='video'))
     if save_debug:
         debug_images = [('model_input', result.crop, '模型输入图'), ('preprocess', result.preview, '预处理图'),
@@ -108,10 +109,10 @@ def save(cls, result, format, filename_prefix, color, show_head, show_chains, sa
                     generated_chains=len(result.rig.chains) if result.rig else 0,
                     seed=result.seed, steps=result.steps, cfg=result.cfg,
                     generation_seconds=result.seconds, preprocess_cache_hit=result.preprocess_cache_hit,
-                    saved_format=format, files=files)
+                    saved_format=format, base_head=head.name if head else 'upstream', files=files)
     manifest_path = directory / 'result.json'
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
     files.append(file_entry(manifest_path, '结果清单', 'data'))
-    summary = f'{len(result.hair.cards)} 张发片 · {manifest["generated_chains"]} 条骨骼链 · 保存完成'
+    summary = f'{len(result.hair.cards)} 张发片 · {manifest["generated_chains"]} 条骨骼链 · {manifest["base_head"]} · 保存完成'
     return SavedOutput(directory, model_path,
                        dict(images=[primary], hairdeck_files=files, hairdeck_summary=[summary]))

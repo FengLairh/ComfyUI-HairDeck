@@ -17,10 +17,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check Python syntax
-        run: python -m compileall -q __init__.py nodes.py runtime.py exporting.py generation.py output.py install_models.py scripts tests _vendor
+        run: python -m compileall -q __init__.py nodes.py runtime.py exporting.py generation.py output.py heads.py install_models.py scripts tests _vendor
       - name: Check preview extension syntax
         run: node --check web/preview.js
       - name: Build and verify release archive
         run: python scripts/build_release.py
       - name: Check offline model bundle integrity handling
         run: python -m unittest discover -s tests -p test_model_bundle.py -v
+      - name: Check local head profile paths
+        run: python -m unittest discover -s tests -p test_head_profiles.py -v

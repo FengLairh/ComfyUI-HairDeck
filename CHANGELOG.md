@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Add local FBX head-profile import with canonical scale/position alignment and rigid head-bone binding.
+- Select the base head in the output node; GLB, VRM and motion previews use the same profile, with a local default and an explicit upstream option.
+- Keep the three-node interface and reuse generated hair when changing the head profile. Custom model assets remain outside the plugin source archive.
+
 ## 0.2.1
 
 - Match torch SDPA autocast before ComfyUI attention dispatch, fixing FP32 Q/K with BF16 V in xFormers during hair generation.
