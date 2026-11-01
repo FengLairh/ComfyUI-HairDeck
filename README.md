@@ -8,7 +8,7 @@ VRM 导出使用安装脚本准备的便携版 Blender；动画与图片预览�
 ![原生 ComfyUI 生成的角色多视图](docs/images/example.png)
 
 [下载发布包](https://github.com/FengLairh/ComfyUI-HairDeck/releases/latest) ·
-[完整示例工作流](example_workflows/03_完整示例_全流程.json) · [验证范围](VALIDATION.md)
+[官方模型地址](#official-models) · [完整示例工作流](example_workflows/03_完整示例_全流程.json) · [验证范围](VALIDATION.md)
 
 ## 安装
 
@@ -53,6 +53,38 @@ ComfyUI/models/hairdeck/
 ```
 
 安装完成后重启 ComfyUI，在菜单 **HairDeck / 发片生成** 中找到节点。
+
+<a id="official-models"></a>
+
+## 官方模型下载地址
+
+本插件需要以下六个模型，权重合计约 **6.4GB**。插件发布 ZIP 不包含这些权重。
+表中的存放位置均相对于 `ComfyUI/models/hairdeck/`。
+
+| 模型 | 官方来源 | 权重文件 | 存放位置 |
+|---|---|---|---|
+| HairDeck 发片 VAE | [hyz317/HairDeck — card_vae](https://huggingface.co/hyz317/HairDeck/tree/main/ckpt/card_vae) | `model.safetensors` | `ckpt/card_vae/` |
+| HairDeck 图像发片生成模型 | [hyz317/HairDeck — image_model](https://huggingface.co/hyz317/HairDeck/tree/main/ckpt/image_model) | `model.safetensors` | `ckpt/image_model/` |
+| HairDeck 弹簧骨骼生成模型 | [hyz317/HairDeck — chain_model](https://huggingface.co/hyz317/HairDeck/tree/main/ckpt/chain_model) | `model.safetensors` | `ckpt/chain_model/` |
+| SAM 3 | [facebook/sam3](https://huggingface.co/facebook/sam3) | `sam3.pt` | `third_party/weights/sam3/` |
+| DINOv3 ViT-L/16 | [facebook/dinov3-vitl16-pretrain-lvd1689m](https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m) | `model.safetensors` | `third_party/weights/dinov3/` |
+| BiRefNet matting | [ZhengPeng7/BiRefNet-matting](https://huggingface.co/ZhengPeng7/BiRefNet-matting) | `model.safetensors` | `third_party/weights/birefnet_matting/` |
+
+**配套数据也需要下载。** 在 [HairDeck 官方模型仓库](https://huggingface.co/hyz317/HairDeck) 中获取：
+
+- `ckpt/card_vae/stats.json`、`ckpt/card_vae/latent_stats_head.json`。
+- `data/token_stats_head.json`、`data/head_frame_train.npz`、`data/spring/chain_stats_head.json`。
+- 使用 VRM 导出或动画预览时，还需 [data/avatar/](https://huggingface.co/hyz317/HairDeck/tree/main/data/avatar) 中的角色与配置文件。
+
+SAM 3 和 DINOv3 的官方 Hugging Face 仓库需要先登录并按仓库页面要求申请访问、接受许可。
+当前安装脚本从下面的 ModelScope 镜像获取这两个权重，其余模型从上述官方 Hugging Face 仓库获取，
+使用固定版本并校验 SHA-256：
+
+- [SAM 3 的 ModelScope 镜像](https://modelscope.cn/models/facebook/sam3/files)
+- [DINOv3 的 ModelScope 镜像](https://modelscope.cn/models/facebook/dinov3-vitl16-pretrain-lvd1689m)
+
+建议优先使用上面的安装脚本一次性下载权重和配套数据，避免手动下载时遗漏文件。
+原作者安装与模型说明见 [HairDeck 官方项目](https://github.com/hyz317/HairDeck#model-weights)。
 
 ## 七个节点
 

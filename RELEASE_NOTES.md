@@ -9,3 +9,13 @@
 
 安装请参阅 README。首次使用需单独安装依赖和下载模型。
 Linux、8GB 配置和其他注意力后端尚未实机验证。第三方代码及模型保留各自许可，详见 THIRD_PARTY_NOTICES.md。
+
+### 官方模型地址
+
+- [HairDeck 官方模型与配套数据](https://huggingface.co/hyz317/HairDeck)：包含发片 VAE、图像发片生成和弹簧骨骼生成三个模型。
+- [SAM 3 — facebook/sam3](https://huggingface.co/facebook/sam3)：使用 `sam3.pt`。
+- [DINOv3 ViT-L/16](https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m)：使用 `model.safetensors`。
+- [BiRefNet matting](https://huggingface.co/ZhengPeng7/BiRefNet-matting)：使用 `model.safetensors`。
+
+六个权重合计约 6.4GB，另需 HairDeck 配套统计文件和角色数据。
+具体文件、存放目录、访问权限及当前安装脚本所用镜像见 [README 官方模型下载地址](https://github.com/FengLairh/ComfyUI-HairDeck#official-models)。
