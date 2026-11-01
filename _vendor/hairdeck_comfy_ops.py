@@ -7,6 +7,10 @@ def scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=0.0, is_caus
                                  scale=None, enable_gqa=False):
     if dropout_p:
         raise ValueError('HairDeck nodes support inference attention without dropout.')
+    # Match torch SDPA autocast before dispatching to backends such as xFormers.
+    if torch.is_autocast_enabled(q.device.type):
+        dtype = torch.get_autocast_dtype(q.device.type)
+        q, k, v = (tensor.to(dtype) for tensor in (q, k, v))
     unbatched = q.ndim == 3
     if unbatched:
         q, k, v = q.unsqueeze(0), k.unsqueeze(0), v.unsqueeze(0)

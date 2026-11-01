@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Match torch SDPA autocast before ComfyUI attention dispatch, fixing FP32 Q/K with BF16 V in xFormers during hair generation.
+- Add CUDA regression checks for the actual model's self/cross-attention, BF16/FP16 autocast, unbatched inputs, and explicit FP32 execution.
+
 ## 0.2.0
 
 - Replace the seven public nodes with exactly three: model loader, generation, and output/save.
