@@ -215,9 +215,9 @@ class LoadedVAE(nn.Module):
     """A trained card VAE (ckpt directory with model.safetensors or model.pt + stats.json): encode padded cards, decode
     latents to cards."""
 
-    def __init__(self, vae_dir, device='cuda'):
+    def __init__(self, vae_dir, device='cuda', checkpoint=None):
         super().__init__()
-        ck = load_ckpt(vae_file(vae_dir))
+        ck = load_ckpt(checkpoint or vae_file(vae_dir))
         a = ck['args']
         self.model = CardVAE(a['L'], a['dim'], a['depth'], 8, a['zdim'], a.get('nf', 16), a.get('dec', 'tf'), a.get('integ', False)).to(device).eval()
         self.model.load_state_dict(ck['model'])

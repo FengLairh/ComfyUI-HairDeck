@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+- Replace the automatic model-bundle selector with six explicit ComfyUI model-file selectors in the loader node.
+- Load each selected checkpoint through its registered model directory, including renamed files and extra model paths; keep companion statistics/avatar data in a separate advanced resource selector.
+- Include all selected weights and statistics in cache fingerprints. Update the three-node workflows for the new loader inputs.
+
 ## 0.3.0
 
 - Add local FBX head-profile import with canonical scale/position alignment and rigid head-bone binding.

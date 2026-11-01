@@ -26,6 +26,10 @@ def main():
     classes = asyncio.run(package.comfy_entrypoint()).get_node_list()
     classes = asyncio.run(classes)
     assert [cls.define_schema().node_id for cls in classes] == ['HairDeckLoader', 'HairDeckGenerate', 'HairDeckSave']
+    loader_inputs = nodes.HairDeckLoader.INPUT_TYPES()['required']
+    assert set(loader_inputs) == {'image_model', 'card_vae', 'chain_model', 'sam3', 'dinov3', 'birefnet', 'resources'}
+    assert 'bundle' not in loader_inputs
+    assert all(value[1].get('default') != 'auto' for value in loader_inputs.values())
     upload = nodes.HairDeckGenerate.INPUT_TYPES()['required']['image'][1]
     assert upload['image_upload'] is True
     assert len(nodes.HairDeckGenerate.RETURN_TYPES) == 1

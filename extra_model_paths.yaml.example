@@ -2,3 +2,13 @@
 hairdeck_external:
   base_path: /absolute/path/to/HairDeck-models
   hairdeck: .
+
+# Optional: register independent weight directories in addition to the resource pack above.
+# hairdeck_individual:
+#   base_path: /absolute/path/to/weights
+#   hairdeck_image_model: image_models
+#   hairdeck_card_vae: card_vaes
+#   hairdeck_chain_model: chain_models
+#   hairdeck_sam3: sam3
+#   hairdeck_dinov3: dinov3
+#   hairdeck_birefnet: birefnet_matting

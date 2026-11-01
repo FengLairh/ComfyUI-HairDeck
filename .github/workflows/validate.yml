@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check Python syntax
-        run: python -m compileall -q __init__.py nodes.py runtime.py exporting.py generation.py output.py heads.py install_models.py scripts tests _vendor
+        run: python -m compileall -q __init__.py nodes.py runtime.py model_files.py exporting.py generation.py output.py heads.py install_models.py scripts tests _vendor
       - name: Check preview extension syntax
         run: node --check web/preview.js
       - name: Build and verify release archive

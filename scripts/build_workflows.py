@@ -8,10 +8,10 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tests'))
-from run_comfy_workflow import static_prompt, animated_prompt
+from run_comfy_workflow import static_prompt, animated_prompt, loader_defaults
 
 TITLES = {'1': '① 模型加载', '2': '② 上传图片并生成', '3': '③ 输出保存与预览'}
-POSITIONS = {'1': [30, 40], '2': [390, 40], '3': [870, 40]}
+POSITIONS = {'1': [30, 40], '2': [470, 40], '3': [950, 40]}
 
 
 def gui_workflow(prompt, contracts, titles=None, positions=None):
@@ -42,7 +42,7 @@ def gui_workflow(prompt, contracts, titles=None, positions=None):
                 inputs.append(dict(name=name, type=kind, link=None))
         if spec['class_type'] == 'LoadImage':
             widgets = [spec['inputs']['image'], 'image']
-        size = {'HairDeckLoader': [300, 120], 'HairDeckGenerate': [410, 530], 'HairDeckSave': [450, 680]}[spec['class_type']]
+        size = {'HairDeckLoader': [380, 310], 'HairDeckGenerate': [410, 530], 'HairDeckSave': [450, 680]}[spec['class_type']]
         outputs = [dict(name=name, type=kind, links=[], slot_index=index)
                    for index, (name, kind) in enumerate(zip(contract['output_name'], contract['output']))]
         nodes.append(dict(id=int(identifier), type=spec['class_type'], title=titles[identifier], pos=positions[identifier],
@@ -60,12 +60,13 @@ def main():
     parser.add_argument('--comfy-url', required=True)
     args = parser.parse_args()
     contracts = requests.get(args.comfy_url.rstrip('/') + '/object_info', timeout=15).json()
+    loader = loader_defaults(contracts)
     directory = ROOT / 'example_workflows'
-    vrm = animated_prompt('HairDeck_example.png')
+    vrm = animated_prompt('HairDeck_example.png', loader=loader)
     vrm['3']['inputs']['format'] = 'GLB + VRM'
-    examples = [('01_静态发片_GLB', static_prompt('HairDeck_example.png')),
+    examples = [('01_静态发片_GLB', static_prompt('HairDeck_example.png', loader=loader)),
                 ('02_弹簧骨骼_VRM_动画', vrm),
-                ('03_完整示例_全流程', animated_prompt('HairDeck_example.png'))]
+                ('03_完整示例_全流程', animated_prompt('HairDeck_example.png', loader=loader))]
     for name, prompt in examples:
         for node in prompt.values():
             if 'filename_prefix' in node['inputs']:

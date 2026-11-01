@@ -8,9 +8,22 @@ import uuid
 import requests
 
 
-def static_prompt(image, seed=0):
+DEFAULT_MODELS = dict(image_model='model.safetensors', card_vae='model.safetensors', chain_model='model.safetensors',
+                      sam3='sam3.pt', dinov3='model.safetensors', birefnet='model.safetensors', resources='hairdeck')
+
+
+def loader_defaults(contracts):
+    schema = contracts['HairDeckLoader']['input']['required']
+    result = {}
+    for name, (kind, options) in schema.items():
+        choices = kind if isinstance(kind, list) else options.get('options', [])
+        result[name] = options.get('default', choices[0] if choices else None)
+    return result
+
+
+def static_prompt(image, seed=0, loader=None):
     return {
-        '1': {'class_type': 'HairDeckLoader', 'inputs': {'bundle': 'auto'}},
+        '1': {'class_type': 'HairDeckLoader', 'inputs': dict(DEFAULT_MODELS if loader is None else loader)},
         '2': {'class_type': 'HairDeckGenerate', 'inputs': {'model': ['1', 0], 'image': image,
                                                        'seed': seed, 'steps': 50, 'cfg': 2.0, 'generate_bones': False}},
         '3': {'class_type': 'HairDeckSave', 'inputs': {'result': ['2', 0], 'format': 'GLB',
@@ -20,8 +33,8 @@ def static_prompt(image, seed=0):
     }
 
 
-def animated_prompt(image):
-    prompt = static_prompt(image)
+def animated_prompt(image, loader=None):
+    prompt = static_prompt(image, loader=loader)
     prompt['2']['inputs']['generate_bones'] = True
     prompt['3']['inputs']['format'] = 'GLB + VRM + 动画'
     return prompt
@@ -62,5 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--animated', action='store_true')
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
-    prompt = animated_prompt(args.image) if args.animated else static_prompt(args.image)
+    contracts = requests.get(args.url + '/object_info/HairDeckLoader', timeout=15).json()
+    loader = loader_defaults(contracts)
+    prompt = animated_prompt(args.image, loader=loader) if args.animated else static_prompt(args.image, loader=loader)
     run(prompt, args.url, args.report)

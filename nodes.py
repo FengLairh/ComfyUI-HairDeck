@@ -5,7 +5,7 @@ import nodes as comfy_nodes
 import folder_paths
 from comfy_api.latest import ComfyExtension, io, ui, Types
 
-from . import runtime, generation, output, heads
+from . import runtime, generation, output, heads, model_files
 
 MODEL = io.Custom('HAIRDECK_MODEL')
 RESULT = io.Custom('HAIRDECK_RESULT')
@@ -40,17 +40,24 @@ class HairDeckLoader(io.ComfyNode):
     @classmethod
     def define_schema(cls):
         return io.Schema(node_id='HairDeckLoader', display_name='HairDeck 模型加载', category=CATEGORY,
-                         description='统一加载所需模型，由 ComfyUI 管理显存。',
-                         inputs=[io.Combo.Input('bundle', display_name='模型包', options=['auto', *runtime.bundles()], default='auto')],
+                         description='分别选择六个实际模型文件，由 ComfyUI 管理显存。',
+                         inputs=[*[io.Combo.Input(role, display_name=label, options=model_files.filenames(role),
+                                                  default=model_files.default_file(role),
+                                                  tooltip='ComfyUI/models/hairdeck/' + relative)
+                                    for role, (label, relative, _) in model_files.MODELS.items()],
+                                 io.Combo.Input('resources', display_name='配套资源目录',
+                                                options=list(model_files.resources()),
+                                                default=next(iter(model_files.resources()), None), advanced=True,
+                                                tooltip='统计文件、角色和头模资源所在目录；权重使用上方独立选择的文件。')],
                          outputs=[MODEL.Output(display_name='模型')])
 
     @classmethod
-    def execute(cls, bundle):
-        return io.NodeOutput(runtime.ModelBundle(runtime.resolve_bundle(bundle)))
+    def execute(cls, resources, **models):
+        return io.NodeOutput(runtime.ModelBundle(model_files.resolve(resources, models)))
 
     @classmethod
-    def fingerprint_inputs(cls, bundle):
-        return runtime.signature(runtime.resolve_bundle(bundle))
+    def fingerprint_inputs(cls, resources, **models):
+        return model_files.signature(model_files.resolve(resources, models))
 
 
 class HairDeckGenerate(io.ComfyNode):
@@ -101,7 +108,7 @@ class HairDeckSave(io.ComfyNode):
                                  io.String.Input('blender_path', display_name='Blender 路径', default='', advanced=True,
                                                  tooltip='VRM 导出使用；留空时自动查找模型包中的便携工具。'),
                                  io.Combo.Input('head_profile', display_name='基础头模', optional=True,
-                                                options=heads.choices(runtime.bundles().values()), default='auto',
+                                                options=heads.choices(model_files.resources().values()), default='auto',
                                                 tooltip='auto 使用本机默认头模；upstream 使用原始参考头模。')],
                          hidden=[io.Hidden.prompt, io.Hidden.extra_pnginfo],
                          outputs=[io.File3DGLB.Output(display_name='GLB 模型'), io.String.Output(display_name='结果目录')])

@@ -11,12 +11,12 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tests'))
-from run_comfy_workflow import animated_prompt, run
+from run_comfy_workflow import animated_prompt, run, loader_defaults
 from build_workflows import gui_workflow
 
 
-def full_prompt(image, prefix):
-    prompt = animated_prompt(image)
+def full_prompt(image, prefix, loader=None):
+    prompt = animated_prompt(image, loader=loader)
     prompt['3']['inputs']['filename_prefix'] = prefix
     return prompt
 
@@ -39,9 +39,9 @@ def main():
     contracts = requests.get(args.url + '/object_info', timeout=10).json()
     registered = {name for name in contracts if name.startswith('HairDeck')}
     if registered != {'HairDeckLoader', 'HairDeckGenerate', 'HairDeckSave'}:
-        raise ValueError('The running instance must register exactly the three v0.2 HairDeck nodes.')
+        raise ValueError('The running instance must register exactly the three HairDeck nodes.')
     date = datetime.now(timezone(timedelta(hours=8))).strftime('%Y%m%d')
-    prompt = full_prompt(args.image, 'HairDeck/three_node_example_' + date)
+    prompt = full_prompt(args.image, 'HairDeck/three_node_example_' + date, loader=loader_defaults(contracts))
     workflow = full_gui(prompt, contracts)
     report = ROOT / '.runtime/full-example-three-history.json'
     started = time.monotonic()
