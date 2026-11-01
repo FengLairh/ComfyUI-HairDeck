@@ -11,8 +11,8 @@
         40
       ],
       "size": [
-        300,
-        120
+        380,
+        310
       ],
       "flags": {},
       "order": 0,
@@ -32,7 +32,13 @@
         "Node name for S&R": "HairDeckLoader"
       },
       "widgets_values": [
-        "auto"
+        "model.safetensors",
+        "model.safetensors",
+        "model.safetensors",
+        "sam3.pt",
+        "model.safetensors",
+        "model.safetensors",
+        "hairdeck"
       ]
     },
     {
@@ -40,7 +46,7 @@
       "type": "HairDeckGenerate",
       "title": "② 上传图片并生成",
       "pos": [
-        390,
+        470,
         40
       ],
       "size": [
@@ -94,7 +100,7 @@
       "type": "HairDeckSave",
       "title": "③ 输出保存与预览",
       "pos": [
-        870,
+        950,
         40
       ],
       "size": [

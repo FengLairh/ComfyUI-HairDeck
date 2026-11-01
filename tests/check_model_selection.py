@@ -123,6 +123,14 @@ class ModelSelectionTests(unittest.TestCase):
         chain_weights.assert_called_once_with(selected.chain_model)
         self.assertEqual(bundle.signature, files.signature(selected))
 
+    def test_vae_uses_the_selected_checkpoint(self):
+        selected = self.renamed_selection()
+        vae = sys.modules['hairdeck_core.cards.vae']
+        with patch.object(vae, 'load_ckpt', side_effect=ValueError('checkpoint probe')) as load:
+            with self.assertRaisesRegex(ValueError, 'checkpoint probe'):
+                vae.LoadedVAE(str(self.root / 'ckpt/card_vae'), 'cpu', checkpoint=str(selected.card_vae))
+        load.assert_called_once_with(str(selected.card_vae))
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

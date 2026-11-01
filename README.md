@@ -102,7 +102,7 @@ SAM 3 和 DINOv3 的官方 Hugging Face 仓库需要先登录并按仓库页面�
 python models/hairdeck/verify_models.py models/hairdeck
 ```
 
-校验通过后，加载节点选择 `auto` 即可；此方式无需在线下载模型。
+校验通过后，在加载节点分别选择六个实际模型文件，高级选项中的“配套资源目录”选择该模型目录；此方式无需在线下载模型。
 模型包不包含缓存、日志、生成结果或用户配置。
 
 Windows VRM 导出工具另包为 `HairDeck-Windows-VRM-Tools-v0.1.1.zip`。
@@ -125,7 +125,7 @@ python custom_nodes/ComfyUI-HairDeck/scripts/build_model_bundle.py --source mode
 
 | 节点 | 输入与用途 |
 |---|---|
-| ① 模型加载 | 选择模型包；六个模型统一交由 ComfyUI ModelPatcher 管理 |
+| ① 模型加载 | 分别选择发片生成、VAE、骨骼、SAM 3、DINOv3 和 BiRefNet 六个模型文件；由 ComfyUI ModelPatcher 管理 |
 | ② 生成头发 | 节点内上传/选择图片，设置种子、步数和引导强度；内部完成预处理、发片与可选骨骼 |
 | ③ 输出保存 | 选择 GLB、GLB+VRM 或 GLB+VRM+动画；统一保存到结果文件夹，并显示预览、动画播放器和下载链接 |
 
@@ -137,6 +137,16 @@ VRM 默认使用上游示例角色，也可导入下面的自定义头模预设�
 生成节点开启“生成弹簧骨骼”后才能保存 VRM/动画，静态 GLB 可关闭该开关。
 透明区域 MASK 中 1 为透明，0 为保留；不连接时使用上传图片的透明度。
 每次处理一张图片，批量可使用 ComfyUI 队列和种子递增。
+
+### 模型文件选择
+
+“模型加载”节点提供六个独立的文件下拉框，按 ComfyUI 模型目录扫描规则显示真实文件名，选择结果随工作流保存。
+默认扫描上表列出的模型目录，现有模型包可直接使用。多个官方权重都叫 `model.safetensors`，它们分别来自各自的模型目录，请按字段标签选择。
+
+需要独立存放权重时，可在 `extra_model_paths.yaml` 中配置 `hairdeck_image_model`、`hairdeck_card_vae`、`hairdeck_chain_model`、`hairdeck_sam3`、`hairdeck_dinov3`、`hairdeck_birefnet`；示例见 `extra_model_paths.yaml.example`。
+独立目录中的兼容权重可以使用自己的文件名。统计文件、标准头框、角色和自定义头模仍从高级选项的“配套资源目录”读取，须与所选模型匹配。
+
+v0.4 替换了原来的单个 `bundle: auto` 加载输入。更新后请刷新 ComfyUI，导入新版三节点模板或重新添加“模型加载”节点，并选择实际文件；已有模型和头模资源可继续使用。
 
 ### 自定义基础头模
 

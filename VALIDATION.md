@@ -1,4 +1,13 @@
-# Validation — 0.3.0
+# Validation — 0.4.0
+
+## v0.4.0: explicit model files
+
+- The loader exposes six independent checkpoint dropdowns using ComfyUI's model-folder registry, plus an advanced companion-resource directory. The former `bundle: auto` input is removed; workflows must use the updated loader inputs.
+- Eight contract checks pass in ComfyUI's Python without loading checkpoints: six independent fields, renamed files for all six roles, external model directories, unregistered/path-traversal rejection, weight/statistics fingerprint invalidation, node selection forwarding, model-constructor forwarding, and explicit VAE checkpoint loading.
+- The complete three-node workflow passed on ComfyUI 0.43.0 / RTX 3090 / xFormers in 32.11 seconds using the six explicit installed files and the existing local head profile. It produced 152 cards, 3 chains, validated GLB/VRM outputs and a 90-frame, 3-second animation.
+- The explicit loader and static GLB workflow also passed on ComfyUI 0.30.0 / PyTorch 2.8.0+cu129 / RTX 5060 Ti 16GB with PyTorch attention.
+- The model input pixels matched the v0.3.0 reference run; generated token arrays matched exactly (maximum absolute difference 0). The selected custom head remained present with 3,982 vertices.
+- All five saved PNGs embed a three-node workflow whose loader contains seven concrete widget values (six model filenames plus the resource directory), with no automatic model-bundle value. All three shipped GUI/API templates passed serialization checks against the running ComfyUI contracts.
 
 ## v0.3.0: local custom heads
 

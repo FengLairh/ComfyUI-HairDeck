@@ -107,7 +107,7 @@ Extract the archive into `ComfyUI/models/` to create the standard `hairdeck` dir
 python models/hairdeck/verify_models.py models/hairdeck
 ```
 
-After verification succeeds, select `auto` in the Model Loader node. No online model download is needed for this setup.
+After verification succeeds, select the six actual checkpoint files in Model Loader and choose the model directory in the advanced Companion Resources field. No online model download is needed for this setup.
 The bundle excludes caches, logs, generated outputs, and user configuration.
 
 The optional Windows VRM export tools are distributed as `HairDeck-Windows-VRM-Tools-v0.1.1.zip`.
@@ -130,7 +130,7 @@ Model archives are distributed separately from the code repository.
 
 | Node | Inputs and purpose |
 |---|---|
-| ① Model Loader (模型加载) | Select the model bundle; ComfyUI ModelPatcher manages all six models |
+| ① Model Loader (模型加载) | Select the image-to-hair, card VAE, spring-bone, SAM 3, DINOv3, and BiRefNet checkpoint files individually; ComfyUI ModelPatcher manages the models |
 | ② Generate Hair (生成头发) | Upload/select an image inside the node, set the seed, steps, and guidance strength; preprocessing, hair cards, and optional spring bones run internally |
 | ③ Save Outputs (输出保存) | Choose `GLB`, `GLB + VRM`, or `GLB + VRM + 动画` (animation); save to one result folder with previews, video playback, and download links |
 
@@ -143,6 +143,16 @@ VRM export uses the upstream example avatar by default and also supports the cus
 Enable Generate spring bones (生成弹簧骨骼) in the generation node before saving VRM or animation output. You can disable it for static GLB output.
 For the transparency MASK, 1 means transparent and 0 means retained; when no mask is connected, the uploaded image's alpha channel is used.
 The nodes process one image at a time. Use the ComfyUI queue and seed increments for multiple generations.
+
+### Model file selection
+
+Model Loader provides six independent file dropdowns. They show actual filenames from ComfyUI's model-directory registry and save the selections in the workflow.
+The default directories are listed in the model table above, so existing model bundles work directly. Several official checkpoints share the filename `model.safetensors`; each field reads its own model directory.
+
+To store weights separately, configure `hairdeck_image_model`, `hairdeck_card_vae`, `hairdeck_chain_model`, `hairdeck_sam3`, `hairdeck_dinov3`, and `hairdeck_birefnet` in `extra_model_paths.yaml`; see `extra_model_paths.yaml.example`.
+Compatible weights in separate directories may use custom filenames. Statistics, the canonical head frame, avatars, and custom head profiles are read from the advanced Companion Resources (配套资源目录) selection and must match the models.
+
+v0.4 replaces the previous single `bundle: auto` loader input. After updating, refresh ComfyUI and import the new three-node templates or add a new Model Loader, then select the actual files. Existing model and head assets remain usable.
 
 ### Custom base heads
 

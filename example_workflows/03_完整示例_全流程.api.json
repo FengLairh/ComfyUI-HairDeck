@@ -2,7 +2,13 @@
   "1": {
     "class_type": "HairDeckLoader",
     "inputs": {
-      "bundle": "auto"
+      "image_model": "model.safetensors",
+      "card_vae": "model.safetensors",
+      "chain_model": "model.safetensors",
+      "sam3": "sam3.pt",
+      "dinov3": "model.safetensors",
+      "birefnet": "model.safetensors",
+      "resources": "hairdeck"
     }
   },
   "2": {

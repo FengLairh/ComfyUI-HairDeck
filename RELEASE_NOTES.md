@@ -1,28 +1,29 @@
-v0.3.0 增加自定义基础头模支持，工作流仍为三个节点：模型加载 → 生成头发 → 输出保存。
+v0.4.0 将 AI 模型加载改为 ComfyUI 常见的独立文件下拉框，工作流仍为三个节点。
 
-- 使用 `scripts/import_head.py` 将自己的 FBX 转换为统一头部坐标系中的参考网格和头部 VRM 预设，保留网格及 UV，并绑定到基准角色头骨。
-- 输出保存节点新增可选的“基础头模”：`auto` 使用本机默认，`upstream` 使用原始参考头模，也可选择已导入的预设。
-- GLB、VRM 和动画使用同一份头模；切换输出设置可复用已有生成结果。查看 GLB 中的头模时，请开启“GLB 包含参考头模”。
-- 中英文 README 已加入导入步骤；发布 ZIP 包含通用工具和三节点模板。
+“模型加载”节点分别列出：
 
-已在 Windows / ComfyUI 0.43.0 / RTX 3090 / xFormers 上实测：本地 FBX 导入、三节点完整生成、静态 GLB、VRM 和 90 帧动画均通过。完整流程约 32 秒；GLB 与导入网格、VRM 与头模预设的几何一致性检查通过。新增五项 CPU 路径与预设选择检查。
+1. 发片生成模型
+2. 发片 VAE
+3. 弹簧骨骼模型
+4. SAM 3 分割模型
+5. DINOv3 图像编码器
+6. BiRefNet 抠图模型
 
-### 使用自己的头模
+每项显示实际文件名，并真正加载所选文件。支持独立模型目录、重命名权重和 `extra_model_paths.yaml` 配置。配套统计文件、标准头框、角色及自定义头模的目录放在高级选项“配套资源目录”中。
 
-在 `ComfyUI` 目录使用其 Python 运行（需要已安装便携 Blender 和 VRM 插件）：
+**升级说明：** 原来的 `bundle: auto` 加载输入已替换。更新插件并重启、刷新 ComfyUI 后，请导入新版三节点模板，或重新添加“模型加载”节点并选择文件。已有模型和头模资源可继续使用，无需重新下载权重。
 
-```bash
-python custom_nodes/ComfyUI-HairDeck/scripts/import_head.py "path/to/MyHead.fbx" --models-dir models/hairdeck --name MyHead --make-default
-```
+### 验证
 
-刷新 ComfyUI 后，在输出节点选择 `auto` 或 `MyHead`。资源写入 `models/hairdeck/heads/MyHead/`。模型权重无需重新下载。
-
-生成仍使用角色图片，头模用于输出装配和预览；导入采用统一缩放和平移，弹簧碰撞使用近似碰撞体。完整自定义角色装配尚未提供。
+- 八项模型选择检查通过，覆盖六项文件解析、重命名、外部目录、路径限制、缓存失效及实际加载参数传递。
+- 已在 ComfyUI 0.43.0、RTX 3090、xFormers 上完成完整流程，约 32 秒生成 GLB、VRM 和 3 秒动画。
+- 同一输入的采样数据与 v0.3.0 参考结果完全一致，已有自定义头模正常使用。
+- 三份 GUI/API 模板及五张内嵌工作流的 PNG 均确认包含明确的模型文件选择。
 
 ### 下载与文档
 
-- 最新插件：本页附件 `ComfyUI-HairDeck-0.3.0.zip`，内含导入工具、中英文说明和三个工作流模板。
+- 最新插件：本页附件 `ComfyUI-HairDeck-0.4.0.zip`，内含中英文说明、安装工具及新版三节点模板。
 - [完整资源与模型包（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa)。
 - [中文说明](https://github.com/FengLairh/ComfyUI-HairDeck#readme) · [English README](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/README.en.md) · [官方模型地址](https://github.com/FengLairh/ComfyUI-HairDeck#official-models) · [验证范围](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/VALIDATION.md)
 
-用户 FBX 和转换资源按原资产许可使用，保存在各自的本地模型目录。插件代码包只包含通用接入代码，不包含用户模型、模型权重或 Blender。
+插件包不含模型权重、用户 FBX、转换后的私有头模或 Blender。
