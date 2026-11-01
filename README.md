@@ -86,6 +86,35 @@ SAM 3 和 DINOv3 的官方 Hugging Face 仓库需要先登录并按仓库页面�
 建议优先使用上面的安装脚本一次性下载权重和配套数据，避免手动下载时遗漏文件。
 原作者安装与模型说明见 [HairDeck 官方项目](https://github.com/hyz317/HairDeck#model-weights)。
 
+### 离线模型整合包
+
+离线模型包名为 `HairDeck-Models-v0.1.1.zip`，包含六个权重、统计文件、示例角色数据及许可。
+模型包单独分发，代码仓库不托管权重；没有离线包时，仍可使用上面的安装脚本从官方来源下载。
+解压到 `ComfyUI/models/` 后得到标准的 `hairdeck` 文件夹，使用 ComfyUI 的 Python 校验：
+
+```bash
+python models/hairdeck/verify_models.py models/hairdeck
+```
+
+校验通过后，加载节点选择 `auto` 即可；此方式无需在线下载模型。
+模型包不包含缓存、日志、生成结果或用户配置。
+
+Windows VRM 导出工具另包为 `HairDeck-Windows-VRM-Tools-v0.1.1.zip`。
+同样解压到 `ComfyUI/models/`，然后执行下面的命令，从本地缓存解压并启用 Blender 插件：
+
+```bash
+python custom_nodes/ComfyUI-HairDeck/install_models.py --models-dir models/hairdeck --only-blender
+```
+
+需要从已有完整模型目录自行制作相同的包时，可运行：
+
+```bash
+python custom_nodes/ComfyUI-HairDeck/scripts/build_model_bundle.py --source models/hairdeck --output-dir model_bundles --windows-tools
+```
+
+构建脚本会先按官方发布 SHA-256 检查源文件，生成 ZIP64、逐文件清单和整包校验文件，
+再从压缩包逐文件回读核验。模型压缩包单独分发，不放入代码仓库。
+
 ## 七个节点
 
 | 节点 | 输入与用途 |

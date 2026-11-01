@@ -20,3 +20,5 @@ jobs:
         run: python -m compileall -q __init__.py nodes.py runtime.py exporting.py install_models.py scripts tests _vendor
       - name: Build and verify release archive
         run: python scripts/build_release.py
+      - name: Check offline model bundle integrity handling
+        run: python -m unittest discover -s tests -p test_model_bundle.py -v
