@@ -1,0 +1,23 @@
+# Install into ComfyUI's Python. Keep the existing CUDA torch/torchvision builds.
+safetensors>=0.4
+scipy>=1.11
+einops>=0.8
+timm>=1.0.20
+iopath>=0.1.10
+ftfy>=6.1
+regex
+pycocotools>=2.0.10
+huggingface_hub>=0.34
+transformers>=4.57,<6
+kornia>=0.8
+omegaconf>=2.3
+torchmetrics>=1.5
+submitit>=1.5
+trimesh>=4.6
+PyOpenGL>=3.1.7
+pyglet>=2.0,<3
+freetype-py>=2.5
+imageio-ffmpeg>=0.5
+requests>=2.31
+triton-windows>=3.4; platform_system == "Windows"
+triton>=3.4; platform_system == "Linux"

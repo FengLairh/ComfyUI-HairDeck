@@ -1,0 +1,4 @@
+# Add this block to ComfyUI/extra_model_paths.yaml when reusing a model pack outside models/hairdeck.
+hairdeck_external:
+  base_path: /absolute/path/to/HairDeck-models
+  hairdeck: .

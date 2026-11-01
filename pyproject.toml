@@ -1,0 +1,19 @@
+[project]
+name = "comfyui-hairdeck"
+version = "0.1.1"
+description = "Native single-image stylized hair cards, spring bones, GLB, VRM and motion preview for ComfyUI."
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+dynamic = ["dependencies"]
+
+[project.urls]
+Repository = "https://github.com/FengLairh/ComfyUI-HairDeck"
+Documentation = "https://github.com/FengLairh/ComfyUI-HairDeck#readme"
+"Bug Tracker" = "https://github.com/FengLairh/ComfyUI-HairDeck/issues"
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.comfy]
+DisplayName = "ComfyUI-HairDeck"
+requires-comfyui = ">=0.30.0"

@@ -1,0 +1,1219 @@
+{
+  "last_node_id": 26,
+  "last_link_id": 28,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "title": "加载角色图片（运行前选择图片）",
+      "pos": [
+        30,
+        30
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            3
+          ],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "HairDeck_example.png",
+        "image"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "HairDeckLoader",
+      "title": "HairDeck 加载模型",
+      "pos": [
+        30,
+        450
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "模型",
+          "type": "HAIRDECK_MODEL",
+          "links": [
+            1,
+            4,
+            9
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckLoader"
+      },
+      "widgets_values": [
+        "auto"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "HairDeckPreprocess",
+      "title": "图像预处理",
+      "pos": [
+        420,
+        30
+      ],
+      "size": [
+        400,
+        420
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "HAIRDECK_MODEL",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "name": "transparent_mask",
+          "type": "MASK",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "预处理数据",
+          "type": "HAIRDECK_PREPARED",
+          "links": [
+            5
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "裁剪图",
+          "type": "IMAGE",
+          "links": [
+            23
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "头发蒙版",
+          "type": "MASK",
+          "links": [
+            24
+          ],
+          "slot_index": 2
+        },
+        {
+          "name": "面部蒙版",
+          "type": "MASK",
+          "links": [
+            26
+          ],
+          "slot_index": 3
+        },
+        {
+          "name": "处理预览",
+          "type": "IMAGE",
+          "links": [
+            8,
+            22
+          ],
+          "slot_index": 4
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckPreprocess"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 4,
+      "type": "HairDeckGenerate",
+      "title": "生成发片",
+      "pos": [
+        850,
+        30
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "HAIRDECK_MODEL",
+          "link": 4
+        },
+        {
+          "name": "prepared",
+          "type": "HAIRDECK_PREPARED",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "发片数据",
+          "type": "HAIRDECK_HAIR",
+          "links": [
+            6,
+            10,
+            11,
+            13,
+            15,
+            17,
+            20
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckGenerate"
+      },
+      "widgets_values": [
+        0,
+        "fixed",
+        50,
+        2.0
+      ]
+    },
+    {
+      "id": 5,
+      "type": "HairDeckExportGLB",
+      "title": "GLB：纯头发",
+      "pos": [
+        1260,
+        30
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "hair",
+          "type": "HAIRDECK_HAIR",
+          "link": 6
+        },
+        {
+          "name": "rig",
+          "type": "HAIRDECK_RIG",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "GLB 模型",
+          "type": "FILE_3D_GLB",
+          "links": [
+            7
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "文件路径",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckExportGLB"
+      },
+      "widgets_values": [
+        false,
+        "auto",
+        "HairDeck/full_example/hair_nohead"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "Preview3D",
+      "title": "预览：纯头发",
+      "pos": [
+        1660,
+        30
+      ],
+      "size": [
+        400,
+        420
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model_file",
+          "type": "FILE_3D_GLB",
+          "link": 7
+        },
+        {
+          "name": "camera_info",
+          "type": "LOAD3D_CAMERA",
+          "link": null
+        },
+        {
+          "name": "bg_image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "Preview3D"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 7,
+      "type": "PreviewImage",
+      "title": "预处理检查",
+      "pos": [
+        420,
+        520
+      ],
+      "size": [
+        400,
+        420
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 8,
+      "type": "HairDeckSpringBones",
+      "title": "生成弹簧骨骼",
+      "pos": [
+        1260,
+        390
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "HAIRDECK_MODEL",
+          "link": 9
+        },
+        {
+          "name": "hair",
+          "type": "HAIRDECK_HAIR",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "骨骼数据",
+          "type": "HAIRDECK_RIG",
+          "links": [
+            12,
+            14,
+            18,
+            21
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckSpringBones"
+      },
+      "widgets_values": [
+        0,
+        50,
+        2.0
+      ]
+    },
+    {
+      "id": 9,
+      "type": "HairDeckExportVRM",
+      "title": "保存 VRM 角色",
+      "pos": [
+        1660,
+        1000
+      ],
+      "size": [
+        400,
+        420
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "hair",
+          "type": "HAIRDECK_HAIR",
+          "link": 11
+        },
+        {
+          "name": "rig",
+          "type": "HAIRDECK_RIG",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VRM 文件路径",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 0
+        },
+        {
+          "name": "角色预览",
+          "type": "IMAGE",
+          "links": [
+            28
+          ],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckExportVRM"
+      },
+      "widgets_values": [
+        "auto",
+        "HairDeck/full_example/avatar",
+        ""
+      ]
+    },
+    {
+      "id": 10,
+      "type": "HairDeckMotionPreview",
+      "title": "转头动画预览",
+      "pos": [
+        2120,
+        1000
+      ],
+      "size": [
+        400,
+        420
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "hair",
+          "type": "HAIRDECK_HAIR",
+          "link": 13
+        },
+        {
+          "name": "rig",
+          "type": "HAIRDECK_RIG",
+          "link": 14
+        }
+      ],
+      "outputs": [
+        {
+          "name": "动画",
+          "type": "VIDEO",
+          "links": [],
+          "slot_index": 0
+        },
+        {
+          "name": "视频路径",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckMotionPreview"
+      },
+      "widgets_values": [
+        false,
+        "auto",
+        "HairDeck/full_example/motion"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "HairDeckExportGLB",
+      "title": "GLB：参考头模",
+      "pos": [
+        1260,
+        780
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "hair",
+          "type": "HAIRDECK_HAIR",
+          "link": 15
+        },
+        {
+          "name": "rig",
+          "type": "HAIRDECK_RIG",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "GLB 模型",
+          "type": "FILE_3D_GLB",
+          "links": [
+            16
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "文件路径",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckExportGLB"
+      },
+      "widgets_values": [
+        true,
+        "auto",
+        "HairDeck/full_example/hair_with_head"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "Preview3D",
+      "title": "预览：参考头模",
+      "pos": [
+        2120,
+        30
+      ],
+      "size": [
+        400,
+        420
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model_file",
+          "type": "FILE_3D_GLB",
+          "link": 16
+        },
+        {
+          "name": "camera_info",
+          "type": "LOAD3D_CAMERA",
+          "link": null
+        },
+        {
+          "name": "bg_image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "Preview3D"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 13,
+      "type": "HairDeckExportGLB",
+      "title": "GLB：骨骼线可视化",
+      "pos": [
+        1660,
+        600
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "hair",
+          "type": "HAIRDECK_HAIR",
+          "link": 17
+        },
+        {
+          "name": "rig",
+          "type": "HAIRDECK_RIG",
+          "link": 18
+        }
+      ],
+      "outputs": [
+        {
+          "name": "GLB 模型",
+          "type": "FILE_3D_GLB",
+          "links": [
+            19
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "文件路径",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckExportGLB"
+      },
+      "widgets_values": [
+        true,
+        "auto",
+        "HairDeck/full_example/hair_bone_lines"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "Preview3D",
+      "title": "预览：骨骼线",
+      "pos": [
+        2580,
+        30
+      ],
+      "size": [
+        400,
+        420
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model_file",
+          "type": "FILE_3D_GLB",
+          "link": 19
+        },
+        {
+          "name": "camera_info",
+          "type": "LOAD3D_CAMERA",
+          "link": null
+        },
+        {
+          "name": "bg_image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "Preview3D"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 15,
+      "type": "HairDeckMotionPreview",
+      "title": "动画：显示骨骼线",
+      "pos": [
+        2580,
+        1000
+      ],
+      "size": [
+        400,
+        420
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "hair",
+          "type": "HAIRDECK_HAIR",
+          "link": 20
+        },
+        {
+          "name": "rig",
+          "type": "HAIRDECK_RIG",
+          "link": 21
+        }
+      ],
+      "outputs": [
+        {
+          "name": "动画",
+          "type": "VIDEO",
+          "links": [],
+          "slot_index": 0
+        },
+        {
+          "name": "视频路径",
+          "type": "STRING",
+          "links": [],
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HairDeckMotionPreview"
+      },
+      "widgets_values": [
+        true,
+        "auto",
+        "HairDeck/full_example/motion_bones"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "SaveImage",
+      "title": "保存预处理图（含工作流）",
+      "pos": [
+        420,
+        1040
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "HairDeck/full_example/preprocess"
+      ]
+    },
+    {
+      "id": 21,
+      "type": "SaveImage",
+      "title": "保存模型输入图",
+      "pos": [
+        850,
+        520
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "HairDeck/full_example/model_input"
+      ]
+    },
+    {
+      "id": 22,
+      "type": "MaskToImage",
+      "title": "头发蒙版转图像",
+      "pos": [
+        30,
+        900
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 24
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            25
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 23,
+      "type": "SaveImage",
+      "title": "保存头发蒙版",
+      "pos": [
+        850,
+        1000
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 25
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "HairDeck/full_example/hair_mask"
+      ]
+    },
+    {
+      "id": 24,
+      "type": "MaskToImage",
+      "title": "面部蒙版转图像",
+      "pos": [
+        30,
+        1120
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            27
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MaskToImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 25,
+      "type": "SaveImage",
+      "title": "保存面部蒙版",
+      "pos": [
+        850,
+        1450
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 27
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "HairDeck/full_example/face_mask"
+      ]
+    },
+    {
+      "id": 26,
+      "type": "SaveImage",
+      "title": "保存角色多视图（含工作流）",
+      "pos": [
+        1660,
+        1500
+      ],
+      "size": [
+        340,
+        260
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "HairDeck/full_example/avatar_views"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      3,
+      0,
+      "HAIRDECK_MODEL"
+    ],
+    [
+      2,
+      1,
+      0,
+      3,
+      1,
+      "IMAGE"
+    ],
+    [
+      3,
+      1,
+      1,
+      3,
+      2,
+      "MASK"
+    ],
+    [
+      4,
+      2,
+      0,
+      4,
+      0,
+      "HAIRDECK_MODEL"
+    ],
+    [
+      5,
+      3,
+      0,
+      4,
+      1,
+      "HAIRDECK_PREPARED"
+    ],
+    [
+      6,
+      4,
+      0,
+      5,
+      0,
+      "HAIRDECK_HAIR"
+    ],
+    [
+      7,
+      5,
+      0,
+      6,
+      0,
+      "FILE_3D_GLB"
+    ],
+    [
+      8,
+      3,
+      4,
+      7,
+      0,
+      "IMAGE"
+    ],
+    [
+      9,
+      2,
+      0,
+      8,
+      0,
+      "HAIRDECK_MODEL"
+    ],
+    [
+      10,
+      4,
+      0,
+      8,
+      1,
+      "HAIRDECK_HAIR"
+    ],
+    [
+      11,
+      4,
+      0,
+      9,
+      0,
+      "HAIRDECK_HAIR"
+    ],
+    [
+      12,
+      8,
+      0,
+      9,
+      1,
+      "HAIRDECK_RIG"
+    ],
+    [
+      13,
+      4,
+      0,
+      10,
+      0,
+      "HAIRDECK_HAIR"
+    ],
+    [
+      14,
+      8,
+      0,
+      10,
+      1,
+      "HAIRDECK_RIG"
+    ],
+    [
+      15,
+      4,
+      0,
+      11,
+      0,
+      "HAIRDECK_HAIR"
+    ],
+    [
+      16,
+      11,
+      0,
+      12,
+      0,
+      "FILE_3D_GLB"
+    ],
+    [
+      17,
+      4,
+      0,
+      13,
+      0,
+      "HAIRDECK_HAIR"
+    ],
+    [
+      18,
+      8,
+      0,
+      13,
+      1,
+      "HAIRDECK_RIG"
+    ],
+    [
+      19,
+      13,
+      0,
+      14,
+      0,
+      "FILE_3D_GLB"
+    ],
+    [
+      20,
+      4,
+      0,
+      15,
+      0,
+      "HAIRDECK_HAIR"
+    ],
+    [
+      21,
+      8,
+      0,
+      15,
+      1,
+      "HAIRDECK_RIG"
+    ],
+    [
+      22,
+      3,
+      4,
+      20,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      3,
+      1,
+      21,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      3,
+      2,
+      22,
+      0,
+      "MASK"
+    ],
+    [
+      25,
+      22,
+      0,
+      23,
+      0,
+      "IMAGE"
+    ],
+    [
+      26,
+      3,
+      3,
+      24,
+      0,
+      "MASK"
+    ],
+    [
+      27,
+      24,
+      0,
+      25,
+      0,
+      "IMAGE"
+    ],
+    [
+      28,
+      9,
+      1,
+      26,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.38,
+      "offset": [
+        20,
+        20
+      ]
+    }
+  },
+  "version": 0.4
+}
