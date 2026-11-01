@@ -8,7 +8,8 @@ VRM 导出使用安装脚本准备的便携版 Blender；动画与图片预览�
 
 ![原生 ComfyUI 生成的角色多视图](docs/images/example.png)
 
-[下载发布包](https://github.com/FengLairh/ComfyUI-HairDeck/releases/latest) ·
+[完整资源下载（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa) ·
+[GitHub 插件发布包](https://github.com/FengLairh/ComfyUI-HairDeck/releases/latest) ·
 [官方模型地址](#official-models) · [完整示例工作流](example_workflows/03_完整示例_全流程.json) · [验证范围](VALIDATION.md)
 
 ## 安装
@@ -88,6 +89,8 @@ SAM 3 和 DINOv3 的官方 Hugging Face 仓库需要先登录并按仓库页面�
 原作者安装与模型说明见 [HairDeck 官方项目](https://github.com/hyz317/HairDeck#model-weights)。
 
 ### 离线模型整合包
+
+完整资源入口：[夸克网盘](https://pan.quark.cn/s/cfe2401c29aa)。模型与工具包的安装位置见下文。
 
 离线模型包名为 `HairDeck-Models-v0.1.1.zip`，包含六个权重、统计文件、示例角色数据及许可。
 模型包单独分发，代码仓库不托管权重；没有离线包时，仍可使用上面的安装脚本从官方来源下载。

@@ -14,6 +14,8 @@ v0.2.0 将 HairDeck 工作流整合为三个节点：**模型加载 → 生成�
 
 ### 下载内容
 
+**[完整资源下载（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa)**。模型与工具包的安装位置见 [README](https://github.com/FengLairh/ComfyUI-HairDeck#离线模型整合包)。
+
 - `ComfyUI-HairDeck-0.2.0.zip`：插件源码、依赖清单、三节点模板和安装工具。
 - `01_static_glb.json` / `02_spring_bones_vrm_motion.json` / `03_complete_example.json`：可直接导入 ComfyUI 的三节点工作流。
 - `HairDeck-ThreeNode-Example-v0.2.0.zip`：本机实际生成的完整示例，包含输入图、工作流、GLB、VRM、动画及过程结果。
