@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-hairdeck"
-version = "0.1.1"
+version = "0.2.0"
 description = "Native single-image stylized hair cards, spring bones, GLB, VRM and motion preview for ComfyUI."
 requires-python = ">=3.12"
 license = { file = "LICENSE" }

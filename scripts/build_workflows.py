@@ -10,10 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tests'))
 from run_comfy_workflow import static_prompt, animated_prompt
 
-TITLES = {'1': '加载角色图片（运行前选择图片）', '2': 'HairDeck 加载模型', '3': '图像预处理', '4': '生成发片',
-          '5': '保存 GLB', '6': '3D 发片预览', '7': '预处理检查', '8': '生成弹簧骨骼', '9': '保存 VRM 角色', '10': '转头动画预览'}
-POSITIONS = {'1': [30, 30], '2': [30, 440], '3': [410, 50], '4': [830, 70], '5': [1220, 70], '6': [1620, 40],
-             '7': [410, 490], '8': [1220, 450], '9': [1620, 620], '10': [2080, 620]}
+TITLES = {'1': '① 模型加载', '2': '② 上传图片并生成', '3': '③ 输出保存与预览'}
+POSITIONS = {'1': [30, 40], '2': [390, 40], '3': [870, 40]}
 
 
 def gui_workflow(prompt, contracts, titles=None, positions=None):
@@ -44,9 +42,7 @@ def gui_workflow(prompt, contracts, titles=None, positions=None):
                 inputs.append(dict(name=name, type=kind, link=None))
         if spec['class_type'] == 'LoadImage':
             widgets = [spec['inputs']['image'], 'image']
-        size = [340, 260]
-        if spec['class_type'] in ('Preview3D', 'PreviewImage', 'HairDeckPreprocess', 'HairDeckMotionPreview', 'HairDeckExportVRM'):
-            size = [400, 420]
+        size = {'HairDeckLoader': [300, 120], 'HairDeckGenerate': [410, 530], 'HairDeckSave': [450, 680]}[spec['class_type']]
         outputs = [dict(name=name, type=kind, links=[], slot_index=index)
                    for index, (name, kind) in enumerate(zip(contract['output_name'], contract['output']))]
         nodes.append(dict(id=int(identifier), type=spec['class_type'], title=titles[identifier], pos=positions[identifier],
@@ -56,7 +52,7 @@ def gui_workflow(prompt, contracts, titles=None, positions=None):
     for link_id, origin, slot, _, _, _ in links:
         mapping[origin]['outputs'][slot]['links'].append(link_id)
     return dict(last_node_id=max(mapping), last_link_id=len(links), nodes=nodes, links=links, groups=[], config={},
-                extra={'ds': {'scale': .55, 'offset': [30, 30]}}, version=.4)
+                extra={'ds': {'scale': .75, 'offset': [30, 40]}}, version=.4)
 
 
 def main():
@@ -65,11 +61,15 @@ def main():
     args = parser.parse_args()
     contracts = requests.get(args.comfy_url.rstrip('/') + '/object_info', timeout=15).json()
     directory = ROOT / 'example_workflows'
-    for name, prompt in [('01_静态发片_GLB', static_prompt('HairDeck_example.png')),
-                          ('02_弹簧骨骼_VRM_动画', animated_prompt('HairDeck_example.png'))]:
+    vrm = animated_prompt('HairDeck_example.png')
+    vrm['3']['inputs']['format'] = 'GLB + VRM'
+    examples = [('01_静态发片_GLB', static_prompt('HairDeck_example.png')),
+                ('02_弹簧骨骼_VRM_动画', vrm),
+                ('03_完整示例_全流程', animated_prompt('HairDeck_example.png'))]
+    for name, prompt in examples:
         for node in prompt.values():
             if 'filename_prefix' in node['inputs']:
-                node['inputs']['filename_prefix'] = node['inputs']['filename_prefix'].replace('native_test/', '')
+                node['inputs']['filename_prefix'] = 'HairDeck/result'
         (directory / (name + '.json')).write_text(json.dumps(gui_workflow(prompt, contracts), ensure_ascii=False, indent=2), encoding='utf-8')
         (directory / (name + '.api.json')).write_text(json.dumps(prompt, ensure_ascii=False, indent=2), encoding='utf-8')
         print('WORKFLOW_WRITTEN', name)

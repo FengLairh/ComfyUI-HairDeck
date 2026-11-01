@@ -10,23 +10,20 @@ import requests
 
 def static_prompt(image, seed=0):
     return {
-        '1': {'class_type': 'LoadImage', 'inputs': {'image': image}},
-        '2': {'class_type': 'HairDeckLoader', 'inputs': {'bundle': 'auto'}},
-        '3': {'class_type': 'HairDeckPreprocess', 'inputs': {'model': ['2', 0], 'image': ['1', 0], 'transparent_mask': ['1', 1]}},
-        '4': {'class_type': 'HairDeckGenerate', 'inputs': {'model': ['2', 0], 'prepared': ['3', 0], 'seed': seed, 'steps': 50, 'cfg': 2.0}},
-        '5': {'class_type': 'HairDeckExportGLB', 'inputs': {'hair': ['4', 0], 'show_head': False, 'color': 'auto', 'filename_prefix': 'HairDeck/native_test/hair'}},
-        '6': {'class_type': 'Preview3D', 'inputs': {'model_file': ['5', 0]}},
-        '7': {'class_type': 'PreviewImage', 'inputs': {'images': ['3', 4]}},
+        '1': {'class_type': 'HairDeckLoader', 'inputs': {'bundle': 'auto'}},
+        '2': {'class_type': 'HairDeckGenerate', 'inputs': {'model': ['1', 0], 'image': image,
+                                                       'seed': seed, 'steps': 50, 'cfg': 2.0, 'generate_bones': False}},
+        '3': {'class_type': 'HairDeckSave', 'inputs': {'result': ['2', 0], 'format': 'GLB',
+                                                    'filename_prefix': 'HairDeck/three_node_test', 'color': 'auto',
+                                                    'show_head': False, 'show_chains': False,
+                                                    'save_debug': True, 'blender_path': ''}},
     }
 
 
 def animated_prompt(image):
     prompt = static_prompt(image)
-    prompt.update({
-        '8': {'class_type': 'HairDeckSpringBones', 'inputs': {'model': ['2', 0], 'hair': ['4', 0], 'seed': 0, 'steps': 50, 'cfg': 2.0}},
-        '9': {'class_type': 'HairDeckExportVRM', 'inputs': {'hair': ['4', 0], 'rig': ['8', 0], 'color': 'auto', 'filename_prefix': 'HairDeck/native_test/avatar', 'blender_path': ''}},
-        '10': {'class_type': 'HairDeckMotionPreview', 'inputs': {'hair': ['4', 0], 'rig': ['8', 0], 'show_chains': False, 'color': 'auto', 'filename_prefix': 'HairDeck/native_test/motion'}},
-    })
+    prompt['2']['inputs']['generate_bones'] = True
+    prompt['3']['inputs']['format'] = 'GLB + VRM + 动画'
     return prompt
 
 

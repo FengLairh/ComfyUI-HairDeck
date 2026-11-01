@@ -8,6 +8,8 @@ if vendor_directory not in sys.path:
 
 from .nodes import HairDeckExtension
 
+WEB_DIRECTORY = './web'
+
 
 async def comfy_entrypoint():
     return HairDeckExtension()

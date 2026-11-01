@@ -1,125 +1,38 @@
 {
   "1": {
-    "class_type": "LoadImage",
-    "inputs": {
-      "image": "HairDeck_example.png"
-    }
-  },
-  "2": {
     "class_type": "HairDeckLoader",
     "inputs": {
       "bundle": "auto"
     }
   },
-  "3": {
-    "class_type": "HairDeckPreprocess",
-    "inputs": {
-      "model": [
-        "2",
-        0
-      ],
-      "image": [
-        "1",
-        0
-      ],
-      "transparent_mask": [
-        "1",
-        1
-      ]
-    }
-  },
-  "4": {
+  "2": {
     "class_type": "HairDeckGenerate",
     "inputs": {
       "model": [
+        "1",
+        0
+      ],
+      "image": "HairDeck_example.png",
+      "seed": 0,
+      "steps": 50,
+      "cfg": 2.0,
+      "generate_bones": true
+    }
+  },
+  "3": {
+    "class_type": "HairDeckSave",
+    "inputs": {
+      "result": [
         "2",
         0
       ],
-      "prepared": [
-        "3",
-        0
-      ],
-      "seed": 0,
-      "steps": 50,
-      "cfg": 2.0
-    }
-  },
-  "5": {
-    "class_type": "HairDeckExportGLB",
-    "inputs": {
-      "hair": [
-        "4",
-        0
-      ],
+      "format": "GLB + VRM",
+      "filename_prefix": "HairDeck/result",
+      "color": "auto",
       "show_head": false,
-      "color": "auto",
-      "filename_prefix": "HairDeck/hair"
-    }
-  },
-  "6": {
-    "class_type": "Preview3D",
-    "inputs": {
-      "model_file": [
-        "5",
-        0
-      ]
-    }
-  },
-  "7": {
-    "class_type": "PreviewImage",
-    "inputs": {
-      "images": [
-        "3",
-        4
-      ]
-    }
-  },
-  "8": {
-    "class_type": "HairDeckSpringBones",
-    "inputs": {
-      "model": [
-        "2",
-        0
-      ],
-      "hair": [
-        "4",
-        0
-      ],
-      "seed": 0,
-      "steps": 50,
-      "cfg": 2.0
-    }
-  },
-  "9": {
-    "class_type": "HairDeckExportVRM",
-    "inputs": {
-      "hair": [
-        "4",
-        0
-      ],
-      "rig": [
-        "8",
-        0
-      ],
-      "color": "auto",
-      "filename_prefix": "HairDeck/avatar",
-      "blender_path": ""
-    }
-  },
-  "10": {
-    "class_type": "HairDeckMotionPreview",
-    "inputs": {
-      "hair": [
-        "4",
-        0
-      ],
-      "rig": [
-        "8",
-        0
-      ],
       "show_chains": false,
-      "color": "auto",
-      "filename_prefix": "HairDeck/motion"
+      "save_debug": true,
+      "blender_path": ""
     }
   }
 }

@@ -1,22 +1,46 @@
 from pathlib import Path
+import hashlib
 
-from comfy_api.latest import ComfyExtension, io, ui, InputImpl, Types
+import nodes as comfy_nodes
+import folder_paths
+from comfy_api.latest import ComfyExtension, io, ui, Types
 
-from . import runtime
-from . import exporting
+from . import runtime, generation, output
 
 MODEL = io.Custom('HAIRDECK_MODEL')
-PREPARED = io.Custom('HAIRDECK_PREPARED')
-HAIR = io.Custom('HAIRDECK_HAIR')
-RIG = io.Custom('HAIRDECK_RIG')
-CATEGORY = 'HairDeck / 发片生成'
+RESULT = io.Custom('HAIRDECK_RESULT')
+CATEGORY = 'HairDeck'
+
+
+def input_images():
+    directory = Path(folder_paths.get_input_directory())
+    return [''] + sorted(path.name for path in directory.iterdir()
+                         if path.is_file() and path.suffix.lower() in ('.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff'))
+
+
+def input_path(image):
+    root = Path(folder_paths.get_input_directory()).resolve()
+    path = Path(folder_paths.get_annotated_filepath(image)).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        raise ValueError('图片必须位于 ComfyUI input 目录。')
+    return path
+
+
+def load_input(image, external_image, transparent_mask):
+    if external_image is not None:
+        return external_image, transparent_mask
+    if not image:
+        raise ValueError('请在生成节点上传/选择角色图片，或连接高级选项中的外部图像。')
+    input_path(image)
+    pixels, alpha = comfy_nodes.LoadImage().load_image(image)
+    return pixels, transparent_mask if transparent_mask is not None else alpha
 
 
 class HairDeckLoader(io.ComfyNode):
     @classmethod
     def define_schema(cls):
-        return io.Schema(node_id='HairDeckLoader', display_name='HairDeck 加载模型', category=CATEGORY,
-                         description='原生运行于 ComfyUI；模型由 ComfyUI 管理，无需网页、WSL 或外部推理服务。',
+        return io.Schema(node_id='HairDeckLoader', display_name='HairDeck 模型加载', category=CATEGORY,
+                         description='统一加载所需模型，由 ComfyUI 管理显存。',
                          inputs=[io.Combo.Input('bundle', display_name='模型包', options=['auto', *runtime.bundles()], default='auto')],
                          outputs=[MODEL.Output(display_name='模型')])
 
@@ -29,114 +53,60 @@ class HairDeckLoader(io.ComfyNode):
         return runtime.signature(runtime.resolve_bundle(bundle))
 
 
-class HairDeckPreprocess(io.ComfyNode):
-    @classmethod
-    def define_schema(cls):
-        return io.Schema(node_id='HairDeckPreprocess', display_name='HairDeck 图像预处理', category=CATEGORY,
-                         inputs=[MODEL.Input('model', display_name='模型'), io.Image.Input('image', display_name='角色图片'),
-                                 io.Mask.Input('transparent_mask', display_name='透明区域蒙版', optional=True,
-                                               tooltip='可连接“加载图片”的 MASK；1 表示透明，0 表示保留。不是头发分割蒙版。')],
-                         outputs=[PREPARED.Output(display_name='预处理数据'), io.Image.Output(display_name='裁剪图'),
-                                  io.Mask.Output(display_name='头发蒙版'), io.Mask.Output(display_name='面部蒙版'),
-                                  io.Image.Output(display_name='处理预览')])
-
-    @classmethod
-    def execute(cls, model, image, transparent_mask=None):
-        prepared, crop, hair_mask, face_mask, preview = runtime.preprocess(model, image, transparent_mask)
-        return io.NodeOutput(prepared, crop, hair_mask, face_mask, preview, ui=ui.PreviewImage(preview, cls=cls))
-
-
 class HairDeckGenerate(io.ComfyNode):
     @classmethod
     def define_schema(cls):
-        return io.Schema(node_id='HairDeckGenerate', display_name='HairDeck 发片生成', category=CATEGORY,
-                         inputs=[MODEL.Input('model', display_name='模型'), PREPARED.Input('prepared', display_name='预处理数据'),
+        return io.Schema(node_id='HairDeckGenerate', display_name='HairDeck 生成头发', category=CATEGORY,
+                         description='内部完成图片预处理、发片生成和可选弹簧骨骼，无需拆成多个节点。',
+                         inputs=[MODEL.Input('model', display_name='模型'),
+                                 io.Combo.Input('image', display_name='角色图片', options=input_images(), default='',
+                                                extra_dict={'image_upload': True}),
                                  io.Int.Input('seed', display_name='随机种子', default=0, min=0, max=2**64 - 1,
                                               control_after_generate=True),
                                  io.Int.Input('steps', display_name='采样步数', default=50, min=1, max=200),
-                                 io.Float.Input('cfg', display_name='引导强度', default=2.0, min=1.0, max=4.0, step=.25)],
-                         outputs=[HAIR.Output(display_name='发片数据')])
+                                 io.Float.Input('cfg', display_name='引导强度', default=2.0, min=1.0, max=4.0, step=.25),
+                                 io.Boolean.Input('generate_bones', display_name='生成弹簧骨骼', default=True),
+                                 io.Image.Input('external_image', display_name='外部图像', optional=True, advanced=True,
+                                                tooltip='连接后优先使用此图像；默认直接在本节点上传图片。'),
+                                 io.Mask.Input('transparent_mask', display_name='透明区域蒙版', optional=True, advanced=True,
+                                               tooltip='1 为透明，0 为保留；不连接时使用上传图片自带的透明度。')],
+                         outputs=[RESULT.Output(display_name='生成结果')])
 
     @classmethod
-    def execute(cls, model, prepared, seed, steps, cfg):
-        return io.NodeOutput(runtime.generate(model, prepared, seed, steps, cfg))
-
-
-class HairDeckSpringBones(io.ComfyNode):
-    @classmethod
-    def define_schema(cls):
-        return io.Schema(node_id='HairDeckSpringBones', display_name='HairDeck 弹簧骨骼生成', category=CATEGORY,
-                         inputs=[MODEL.Input('model', display_name='模型'), HAIR.Input('hair', display_name='发片数据'),
-                                 io.Int.Input('seed', display_name='骨骼随机种子', default=0, min=0, max=2**64 - 1),
-                                 io.Int.Input('steps', display_name='骨骼采样步数', default=50, min=1, max=200),
-                                 io.Float.Input('cfg', display_name='骨骼引导强度', default=2.0, min=1.0, max=4.0, step=.25)],
-                         outputs=[RIG.Output(display_name='骨骼数据')])
+    def execute(cls, model, image, seed, steps, cfg, generate_bones, external_image=None, transparent_mask=None):
+        pixels, mask = load_input(image, external_image, transparent_mask)
+        result = generation.generate(model, pixels, seed, steps, cfg, generate_bones, mask)
+        return io.NodeOutput(result, ui=ui.PreviewImage(result.preview, cls=cls))
 
     @classmethod
-    def execute(cls, model, hair, seed, steps, cfg):
-        return io.NodeOutput(runtime.generate_rig(model, hair, seed, steps, cfg))
+    def fingerprint_inputs(cls, image, external_image=None, **kwargs):
+        if external_image is not None or not image:
+            return 'external-image'
+        return hashlib.sha256(input_path(image).read_bytes()).hexdigest()
 
 
-class HairDeckExportGLB(io.ComfyNode):
+class HairDeckSave(io.ComfyNode):
     @classmethod
     def define_schema(cls):
-        return io.Schema(node_id='HairDeckExportGLB', display_name='HairDeck 导出 GLB', category=CATEGORY,
-                         is_output_node=True,
-                         inputs=[HAIR.Input('hair', display_name='发片数据'),
-                                 io.Boolean.Input('show_head', display_name='包含参考头模', default=False),
+        return io.Schema(node_id='HairDeckSave', display_name='HairDeck 输出保存', category=CATEGORY,
+                         description='集中保存模型、VRM、动画和可选过程图；输出区域提供预览和下载。', is_output_node=True,
+                         inputs=[RESULT.Input('result', display_name='生成结果'),
+                                 io.Combo.Input('format', display_name='保存内容', options=output.FORMATS,
+                                                default='GLB + VRM + 动画'),
+                                 io.String.Input('filename_prefix', display_name='保存前缀', default='HairDeck/result'),
                                  io.String.Input('color', display_name='发色', default='auto', tooltip='auto 或 #RRGGBB'),
-                                 io.String.Input('filename_prefix', display_name='文件名前缀', default='HairDeck/hair'),
-                                 RIG.Input('rig', display_name='骨骼线预览', optional=True,
-                                           tooltip='连接后将骨骼显示为线条几何；真正的蒙皮和弹簧骨骼请使用 VRM 导出。')],
-                         outputs=[io.File3DGLB.Output(display_name='GLB 模型'), io.String.Output(display_name='文件路径')])
+                                 io.Boolean.Input('show_head', display_name='GLB 包含参考头模', default=False),
+                                 io.Boolean.Input('show_chains', display_name='显示骨骼线', default=False, advanced=True),
+                                 io.Boolean.Input('save_debug', display_name='保存过程图和曲线数据', default=True, advanced=True),
+                                 io.String.Input('blender_path', display_name='Blender 路径', default='', advanced=True,
+                                                 tooltip='VRM 导出使用；留空时自动查找模型包中的便携工具。')],
+                         hidden=[io.Hidden.prompt, io.Hidden.extra_pnginfo],
+                         outputs=[io.File3DGLB.Output(display_name='GLB 模型'), io.String.Output(display_name='结果目录')])
 
     @classmethod
-    def execute(cls, hair, show_head, color, filename_prefix, rig=None):
-        path = exporting.save_glb(hair, rig, show_head, color, filename_prefix)
-        return io.NodeOutput(Types.File3D(str(path)), str(path), ui=ui.PreviewText(str(path)))
-
-    @classmethod
-    def fingerprint_inputs(cls, **kwargs):
-        return float('nan')
-
-
-class HairDeckExportVRM(io.ComfyNode):
-    @classmethod
-    def define_schema(cls):
-        return io.Schema(node_id='HairDeckExportVRM', display_name='HairDeck 导出 VRM', category=CATEGORY,
-                         description='将头发与弹簧骨骼装配到示例角色；调用本地 Blender 4.2 LTS。', is_output_node=True,
-                         inputs=[HAIR.Input('hair', display_name='发片数据'), RIG.Input('rig', display_name='骨骼数据'),
-                                 io.String.Input('color', display_name='发色', default='auto', tooltip='auto 或 #RRGGBB'),
-                                 io.String.Input('filename_prefix', display_name='文件名前缀', default='HairDeck/avatar'),
-                                 io.String.Input('blender_path', display_name='Blender 路径', default='',
-                                                 tooltip='留空时使用模型包 tools/blender 中的便携版。')],
-                         outputs=[io.String.Output(display_name='VRM 文件路径'), io.Image.Output(display_name='角色预览')])
-
-    @classmethod
-    def execute(cls, hair, rig, color, filename_prefix, blender_path):
-        path, preview = exporting.save_vrm(hair, rig, color, filename_prefix, blender_path)
-        return io.NodeOutput(str(path), preview, ui=ui.PreviewImage(preview, cls=cls))
-
-    @classmethod
-    def fingerprint_inputs(cls, **kwargs):
-        return float('nan')
-
-
-class HairDeckMotionPreview(io.ComfyNode):
-    @classmethod
-    def define_schema(cls):
-        return io.Schema(node_id='HairDeckMotionPreview', display_name='HairDeck 动画预览', category=CATEGORY,
-                         is_output_node=True,
-                         inputs=[HAIR.Input('hair', display_name='发片数据'), RIG.Input('rig', display_name='骨骼数据'),
-                                 io.Boolean.Input('show_chains', display_name='显示骨骼线', default=False),
-                                 io.String.Input('color', display_name='发色', default='auto'),
-                                 io.String.Input('filename_prefix', display_name='文件名前缀', default='HairDeck/motion')],
-                         outputs=[io.Video.Output(display_name='动画'), io.String.Output(display_name='视频路径')])
-
-    @classmethod
-    def execute(cls, hair, rig, show_chains, color, filename_prefix):
-        path, saved = exporting.save_motion(hair, rig, show_chains, color, filename_prefix)
-        return io.NodeOutput(InputImpl.VideoFromFile(str(path)), str(path), ui=ui.PreviewVideo([saved]))
+    def execute(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path):
+        saved = output.save(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path)
+        return io.NodeOutput(Types.File3D(str(saved.model)), str(saved.directory), ui=saved.ui)
 
     @classmethod
     def fingerprint_inputs(cls, **kwargs):
@@ -145,5 +115,4 @@ class HairDeckMotionPreview(io.ComfyNode):
 
 class HairDeckExtension(ComfyExtension):
     async def get_node_list(self):
-        return [HairDeckLoader, HairDeckPreprocess, HairDeckGenerate, HairDeckSpringBones,
-                HairDeckExportGLB, HairDeckExportVRM, HairDeckMotionPreview]
+        return [HairDeckLoader, HairDeckGenerate, HairDeckSave]

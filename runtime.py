@@ -188,9 +188,9 @@ class RigData:
     chains: list
 
 
-def preprocess(bundle, image, transparent_mask=None):
+def preprocess(bundle, image, transparent_mask=None, source=None):
     weights = bundle.load(bundle.preprocess, 4)
-    source = image_bytes(image, transparent_mask)
+    source = image_bytes(image, transparent_mask) if source is None else source
     rgb, alpha, _ = load_image(source)
     preset = PRESETS['best']
     prep = Prep(preset['cfg'], matte='birefnet_matting', matte_size=preset.get('alpha_size', 768),

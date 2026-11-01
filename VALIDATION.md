@@ -1,28 +1,31 @@
-# Validation — 0.1.1
+# Validation — 0.2.0
 
 Test environment: Windows x64, ComfyUI 0.30.0, Python 3.12.10, PyTorch 2.8.0+cu129,
 torchvision 0.23.0+cu129, NVIDIA RTX 5060 Ti (16GB).
-Device identity was verified from ComfyUI `/system_stats` and process startup logs;
-the earlier RTX 3090 label was based on the launch argument and has been corrected.
+Device identity was verified from ComfyUI `/system_stats` and process startup logs.
 The Windows environment includes triton-windows 3.4.0.post21; compilation is disabled for SAM 3.
 
 Completed with real checkpoints and the upstream ex01 image:
 
-- All seven native V3 nodes register through `comfy_entrypoint`.
-- Static workflow: preprocessing → hair cards → GLB → standard Preview3D; successful, about 17 seconds including initial model load.
-- Full workflow: hair cards → chains → GLB, VRM, 3-second H.264 motion preview; successful, about 39 seconds.
-- The old HairDeck web backend was stopped during the full workflow. No WSL or web inference module is used by the node implementation.
-- 123 hair cards and 20 generated chains; VRM export produced 19 spring groups and passed the upstream structural checks.
-- Model groups are registered as ComfyUI ModelPatcher objects and loaded with `load_models_gpu`.
-- The release ZIP was extracted into a separate ComfyUI base directory. Its packaged modules ran the complete workflow again in about 38 seconds, using only a configured model directory.
-- Input alpha, single-image limits, hair/rig matching, workspace isolation and output path containment are covered by contract checks.
-- Repeated-seed execution reused nodes 1–4 (image, loader, preprocessing, generation); changing the seed reused nodes 1–3 and reran generation as intended.
-- Complete local example: 22 workflow nodes, including all seven HairDeck node types; three GLBs, VRM, normal and bone-line animations, crop, masks and previews were generated in about 54 seconds on the RTX 5060 Ti 16GB.
-- Each of the five SaveImage PNGs contains the complete workflow and API prompt. Both H.264 videos were decoded frame by frame: 90 frames, 480×480, 3 seconds.
-- This complete example generated 123 hair cards and 20 chains; its VRM contained 17 spring groups and passed the structural checks. The earlier validation fixture produced 19 groups; counts can differ after filtering and numerical/backend differences.
+- Exactly three native V3 nodes register through `comfy_entrypoint`: `HairDeckLoader`, `HairDeckGenerate`, `HairDeckSave`. The former standalone preprocessing, bone and export nodes are no longer registered.
+- All three GUI templates and their API counterparts contain exactly three nodes and two connections. GUI widget serialization was checked against the running ComfyUI contracts.
+- The generation node exposes ComfyUI's standard image-upload control. File contents are included in its fingerprint so replacing a file under the same name invalidates generation.
+- Static three-node workflow: successful GLB export and locally rendered front/side/back preview, about 15 seconds including initial model load.
+- Complete three-node workflow: GLB, VRM, a 3-second H.264 animation, previews, masks and curve data, about 30 seconds with preprocessing cached.
+- The release ZIP was extracted into a separate ComfyUI base directory, with only a model-directory junction and the input image configured. Its packaged three-node workflow ran successfully in 38.11 seconds, including initial model load and preprocessing; the same GLB/VRM/PNG/video checks passed.
+- The complete example generated 123 hair cards and 20 chains. Its GLB contained 17,152 vertices with finite positions and UVs. Its VRM contained 17 spring groups and passed the upstream structural checks.
+- Each of the five saved preview/debug PNGs contains the exact three-node GUI workflow and API prompt. The H.264 video was decoded frame by frame: 90 frames, 480×480, 3 seconds.
+- Repeated-seed execution reused nodes 1–2 (loader and generation); changing the seed reused node 1 and reran generation with the temporary CPU preprocessing cache. Output/save ran on each submission and used a new result folder.
+- Contract checks cover input alpha, single-image limits, matching hair/rig data, workspace isolation, output containment, missing-bone export errors, preprocessing cache reuse/invalidation and recovery from a corrupt cache.
+- The local preview extension is served by ComfyUI; JavaScript syntax checks pass. Browser interaction and visual acceptance have not been assessed.
+- The old HairDeck web backend was stopped during validation. Inference runs in ComfyUI Python/CUDA, without WSL or an HTTP inference backend.
+- Model groups are registered as ComfyUI ModelPatcher objects and loaded with `load_models_gpu`. The preprocessing disk cache contains CPU image data, not persistent GPU features.
+- Offline model-bundle manifest containment, official-hash rejection and ZIP corruption handling tests pass. Existing v0.1.1 model/tool bundles remain compatible.
 
 Not yet assessed: other GPUs, 8GB configurations, Linux native ComfyUI, arbitrary custom avatar fitting,
 all optional attention backends, and browser visual acceptance. The in-app browser tool was unavailable in this session.
+
+v0.2 replaces the v0.1 seven-node interface. Import the new templates; previous workflows remain available in the v0.1.1 release.
 
 Source and versioned ZIP distribution: https://github.com/FengLairh/ComfyUI-HairDeck
 ComfyRegistry registration is separate and has not been performed.
