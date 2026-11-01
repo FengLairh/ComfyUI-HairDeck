@@ -1,4 +1,15 @@
-# Validation — 0.2.0
+# Validation — 0.2.1
+
+## v0.2.1: attention autocast
+
+- Reproduced the exact xFormers error with FP32 query/key and BF16 value, both in a minimal adapter call and in the real model's self/cross-attention blocks.
+- The model's Q/K RMSNorm uses FP32 weights, promoting its result to FP32. The adapter now applies the active torch autocast dtype before calling ComfyUI's selected attention backend, matching the original torch SDPA behavior.
+- Four CUDA regression tests pass, covering BF16/FP16 self/cross-attention against torch SDPA, all-FP32 inputs under autocast, unbatched mixed inputs, and explicit FP32 execution with autocast disabled.
+- Regression environments: RTX 3090 24GB, PyTorch 2.9.1+cu130, xFormers 0.0.33.post2, ComfyUI 0.43.0; and RTX 5060 Ti 16GB, PyTorch 2.8.0+cu129, PyTorch attention, ComfyUI 0.30.0. These GPU checks ran locally with each ComfyUI installation's Python.
+- Replayed the previously failing complete local workflow in the original ComfyUI 0.43.0 instance, keeping xFormers enabled: successful in 46.16 seconds, with 152 hair cards, 3 generated chains, and 3 VRM spring groups.
+- Output checks passed: GLB with 14,120 vertices and finite positions/UVs, upstream VRM structural validation, five PNGs with embedded workflow metadata, and H.264 video decoded as 90 frames at 480×480 over 3 seconds.
+
+## v0.2.0 baseline
 
 Test environment: Windows x64, ComfyUI 0.30.0, Python 3.12.10, PyTorch 2.8.0+cu129,
 torchvision 0.23.0+cu129, NVIDIA RTX 5060 Ti (16GB).
@@ -22,7 +33,7 @@ Completed with real checkpoints and the upstream ex01 image:
 - Model groups are registered as ComfyUI ModelPatcher objects and loaded with `load_models_gpu`. The preprocessing disk cache contains CPU image data, not persistent GPU features.
 - Offline model-bundle manifest containment, official-hash rejection and ZIP corruption handling tests pass. Existing v0.1.1 model/tool bundles remain compatible.
 
-Not yet assessed: other GPUs, 8GB configurations, Linux native ComfyUI, arbitrary custom avatar fitting,
+Not yet assessed: GPUs other than the RTX 5060 Ti and RTX 3090, 8GB configurations, Linux native ComfyUI, arbitrary custom avatar fitting,
 all optional attention backends, and browser visual acceptance. The in-app browser tool was unavailable in this session.
 
 v0.2 replaces the v0.1 seven-node interface. Import the new templates; previous workflows remain available in the v0.1.1 release.

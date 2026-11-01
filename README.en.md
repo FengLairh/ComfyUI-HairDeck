@@ -168,11 +168,14 @@ v0.2 replaces the seven-node workflow with a three-node interface. The former st
 Restart and refresh ComfyUI, then import the new templates. Previous templates remain available in the [v0.1.1 release](https://github.com/FengLairh/ComfyUI-HairDeck/releases/tag/v0.1.1).
 Existing models do not need to be downloaded again; the v0.1.1 offline model bundle remains compatible with v0.2.
 
+v0.2.1 fixes the Q/K/V dtype mismatch with xFormers. To upgrade from v0.2.0, update the plugin and restart ComfyUI; no model download is required.
+
 ## Requirements and validation
 
 - ComfyUI **0.30.0 or later**, Python 3.12+, and a CUDA build of PyTorch 2.8+.
 - A BF16-capable NVIDIA CUDA GPU is required. A 16 GB GPU has been tested successfully; 12 GB is only a configuration reference and has not been tested. 8 GB configurations are untested.
 - Native Windows workflows have been tested with Python 3.12.10, PyTorch 2.8.0+cu129, and an RTX 5060 Ti 16 GB.
+- v0.2.1 also passed the previously failing complete workflow on ComfyUI 0.43.0, PyTorch 2.9.1+cu130, xFormers 0.0.33.post2, and an RTX 3090 24 GB.
 - Linux x86-64 paths and tool installation are implemented, but native Linux ComfyUI has not been tested on hardware.
 - Other attention backends, GPUs, and Python versions have not been individually validated. See [VALIDATION.md](VALIDATION.md) for the tested scope, including pending browser visual acceptance.
 

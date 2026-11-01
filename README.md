@@ -160,11 +160,14 @@ v0.2 将七节点工作流替换为三节点接口，不再注册旧的独立预
 请刷新 ComfyUI 并导入新版模板；旧模板可在 v0.1.1 Release 中获取。
 已有模型及离线模型包无需重下，v0.1.1 模型包仍可用于 v0.2。
 
+v0.2.1 修复了 xFormers 下 Q/K/V 精度不一致的报错。从 v0.2.0 更新插件后重启 ComfyUI 即可，模型无需重新下载。
+
 ## 环境与验证范围
 
 - ComfyUI **0.30.0 或更新版本**，Python 3.12+，PyTorch 2.8+ 的 CUDA 构建。
 - 需要支持 BF16 的 NVIDIA CUDA 显卡，16GB 已实测跑通；12GB 仅作为配置参考，尚未实机验证，8GB 未验证。
 - 原生 Windows 已通过实际工作流验证：Python 3.12.10、PyTorch 2.8.0+cu129、RTX 5060 Ti 16GB。
+- v0.2.1 另已在 ComfyUI 0.43.0、PyTorch 2.9.1+cu130、xFormers 0.0.33.post2、RTX 3090 24GB 上跑通此前报错的完整工作流。
 - Linux x86-64 路径和工具安装已实现，尚未完成 Linux 原生 ComfyUI 真机验证。
 - 其他注意力后端、其他显卡和 Python 版本尚未逐一验证；以 `VALIDATION.md` 为准。
 

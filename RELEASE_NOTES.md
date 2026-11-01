@@ -1,32 +1,19 @@
-v0.2.0 将 HairDeck 工作流整合为三个节点：**模型加载 → 生成头发 → 输出保存**。
+v0.2.1 修复启用 xFormers 时生成头发失败的精度报错：`query/key: float32, value: bfloat16`。
 
-- 模型加载：统一选择模型包，由 ComfyUI 管理显存。
-- 生成头发：直接在节点内上传图片，内部完成预处理、发片及可选的弹簧骨骼生成。
-- 输出保存：集中导出 GLB / VRM / 动画、预览和过程图，结果保存在同一个文件夹；节点内提供下载链接和动画播放器。
-- 三份中文示例模板都只有三个节点，完整示例的 PNG 也内嵌三节点工作流。
-- 改种子复用图片预处理；改保存格式或颜色复用生成结果。
-- 原生 Windows、ComfyUI 0.30.0、Python 3.12、PyTorch 2.8、RTX 5060 Ti 16GB 已实测生成完整结果：123 张发片、20 条骨骼链，VRM 结构检查通过；3 秒 H.264 动画已逐帧解码验证。
-- 发布 ZIP 已在单独目录解压复测，首次完整运行约 38 秒；已有预处理缓存时约 30 秒。
+模型的 Q/K 归一化会产生 FP32；此前的适配层没有执行原始 PyTorch SDPA 的自动精度转换。本版在调用 ComfyUI 注意力后端前按当前 autocast 精度统一 Q/K/V，继续使用所选后端。
 
-**升级说明：** 本版替换旧的七节点接口，不再注册旧节点。更新后重启并刷新 ComfyUI，导入新版模板；旧工作流仍可使用 v0.1.1。已有模型和 v0.1.1 离线模型包无需重新下载。
+- 新增 BF16 / FP16、自注意力 / 交叉注意力、三维输入及关闭 autocast 时的 FP32 回归检查。
+- 已在发生报错的原始环境复测：ComfyUI 0.43.0、PyTorch 2.9.1+cu130、xFormers 0.0.33.post2、RTX 3090 24GB。
+- 原完整工作流约 46 秒执行成功，生成 152 张发片和 3 条骨骼链；GLB、VRM、五张内嵌工作流的 PNG 及 3 秒 H.264 动画均通过文件检查。
+- 同时通过 ComfyUI 0.30.0、PyTorch 2.8.0+cu129、RTX 5060 Ti 16GB 的 PyTorch 注意力回归检查。
 
-推理在 ComfyUI Python/CUDA 进程中运行。首次安装仍需安装依赖并准备模型；代码 ZIP 不含模型权重和 Blender。Linux、8GB 配置及其他注意力后端尚未实机验证，浏览器视觉验收尚未完成。
+**更新方法：** 安装本页附件 `ComfyUI-HairDeck-0.2.1.zip`，或在插件目录执行 `git pull`，然后重启 ComfyUI。已有三节点工作流可继续使用，模型无需重新下载。
 
-### 下载内容
+### 下载与文档
 
-**[完整资源下载（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa)**。模型与工具包的安装位置见 [README](https://github.com/FengLairh/ComfyUI-HairDeck#离线模型整合包)。
+- 最新插件修复包：本页附件 `ComfyUI-HairDeck-0.2.1.zip`，包含中英文 README 和三节点模板。
+- [完整资源与模型包（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa)。模型与工具的安装位置见 [README](https://github.com/FengLairh/ComfyUI-HairDeck#离线模型整合包)。
+- [完整三节点示例下载](https://github.com/FengLairh/ComfyUI-HairDeck/releases/download/v0.2.0/HairDeck-ThreeNode-Example-v0.2.0.zip)：可在 v0.2.1 中继续使用。
+- [中文说明](https://github.com/FengLairh/ComfyUI-HairDeck#readme) · [English README](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/README.en.md) · [官方模型地址](https://github.com/FengLairh/ComfyUI-HairDeck#official-models) · [验证范围](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/VALIDATION.md)
 
-- `ComfyUI-HairDeck-0.2.0.zip`：插件源码、依赖清单、三节点模板和安装工具。
-- `01_static_glb.json` / `02_spring_bones_vrm_motion.json` / `03_complete_example.json`：可直接导入 ComfyUI 的三节点工作流。
-- `HairDeck-ThreeNode-Example-v0.2.0.zip`：本机实际生成的完整示例，包含输入图、工作流、GLB、VRM、动画及过程结果。
-
-### 官方模型地址
-
-- [HairDeck 官方模型与配套数据](https://huggingface.co/hyz317/HairDeck)：发片 VAE、图像发片生成、弹簧骨骼生成三个模型。
-- [SAM 3 — facebook/sam3](https://huggingface.co/facebook/sam3)：使用 `sam3.pt`。
-- [DINOv3 ViT-L/16](https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m)：使用 `model.safetensors`。
-- [BiRefNet matting](https://huggingface.co/ZhengPeng7/BiRefNet-matting)：使用 `model.safetensors`。
-
-六个权重合计约 6.4GB，另需 HairDeck 配套统计文件和角色数据。
-具体文件、模型包用法、访问权限和安装方法见 [README](https://github.com/FengLairh/ComfyUI-HairDeck#official-models)。
-第三方代码及模型保留各自许可，详见仓库的 THIRD_PARTY_NOTICES.md。
+代码 ZIP 不含模型权重和 Blender。第三方代码及模型保留各自许可，详见 THIRD_PARTY_NOTICES.md。
