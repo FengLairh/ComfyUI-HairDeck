@@ -132,11 +132,29 @@ python custom_nodes/ComfyUI-HairDeck/scripts/build_model_bundle.py --source mode
 默认示例工作流本身只有三个节点，图片上传已内置，不需要再添加 LoadImage 或拆开的预处理/导出节点。
 高级选项支持连接外部 IMAGE/MASK。GLB 输出仍保留标准 `FILE_3D_GLB` 类型，可按需接内置 Preview3D。
 “显示骨骼线”用于几何/动画可视化；可动画化的蒙皮与弹簧属性保存在 VRM。
-当前 VRM 使用上游示例角色，尚未提供任意自定义角色装配。
+VRM 默认使用上游示例角色，也可导入下面的自定义头模预设。完整自定义角色装配尚未提供。
 
 生成节点开启“生成弹簧骨骼”后才能保存 VRM/动画，静态 GLB 可关闭该开关。
 透明区域 MASK 中 1 为透明，0 为保留；不连接时使用上传图片的透明度。
 每次处理一张图片，批量可使用 ComfyUI 队列和种子递增。
+
+### 自定义基础头模
+
+从 `ComfyUI` 目录使用自己的 Python 导入 FBX（需要已安装便携 Blender 和 VRM 插件）：
+
+```bash
+python custom_nodes/ComfyUI-HairDeck/scripts/import_head.py "path/to/MyHead.fbx" --models-dir models/hairdeck --name MyHead --make-default
+```
+
+刷新 ComfyUI，在“输出保存”节点的“基础头模”中选择 `auto` 或 `MyHead`，并开启“GLB 包含参考头模”。
+`auto` 使用本机设置的默认头模，`upstream` 使用原始参考头模。工作流仍为三个节点，切换头模可复用已经生成的头发。
+
+导入工具按训练头框统一缩放、平移，保留网格和 UV，生成灰色参考头模及仅含头部网格的 VRM 预设，并将头模刚性绑定到基准角色的头骨。
+GLB、VRM 和动画使用同一份头模。生成按角色图片完成，所选头模用于输出装配和预览；弹簧碰撞使用现有近似碰撞体。
+需要校准时，可通过 `--scale-adjust` 和 `--offset X Y Z` 调整比例和头部坐标系中的偏移。重导入请使用新名称，已有预设不会覆盖。
+
+资源保存在 `models/hairdeck/heads/MyHead/`，本机默认选择保存在 `heads/active.json`。
+FBX 和转换资源按原资产许可使用，单独保存在模型目录；插件代码发布包只包含通用导入工具。模型权重无需重新下载。
 
 ## 示例工作流
 

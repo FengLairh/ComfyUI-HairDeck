@@ -32,7 +32,8 @@
       "show_head": false,
       "show_chains": false,
       "save_debug": true,
-      "blender_path": ""
+      "blender_path": "",
+      "head_profile": "auto"
     }
   }
 }

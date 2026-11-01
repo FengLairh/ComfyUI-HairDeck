@@ -1,4 +1,14 @@
-# Validation — 0.2.1
+# Validation — 0.3.0
+
+## v0.3.0: local custom heads
+
+- Imported a local static FBX with 3,982 vertices, 7,528 triangles and UVs into a canonical gray head GLB and a head-only VRM profile. The original FBX SHA-256 remained unchanged.
+- Verified explicit profile selection and the local `auto` default in native ComfyUI 0.43.0 on the RTX 3090 / xFormers environment below. Exactly three HairDeck nodes remain registered; the new output input is optional and defaults to `auto`.
+- The full three-node workflow completed in 32.12 seconds, exporting GLB, VRM and a 90-frame animation. Static GLB export also passed. All five preview/debug PNGs embed a three-node workflow.
+- Both output GLBs contain the selected 3,982-vertex head with a maximum nearest-vertex error below 1e-7 against the canonical profile mesh. VRM preserved the profile's head geometry within 1.4e-8 and passed the upstream structural checks. The selected mesh is also used in the motion preview; generated previews were visually inspected.
+- Changing output format and switching from explicit selection to the local `auto` default reused the cached loader and generation nodes.
+- Five CPU tests cover default/explicit head selection, profile-name containment, mesh/VRM path containment, and GLB/motion mesh consistency. GUI templates were regenerated for the optional profile input.
+- Alignment is a uniform scale/translation to the training head frame. Spring collisions use approximate colliders; this is head-only output assembly, not complete custom-avatar fitting or mesh-conditioned generation. Custom source/converted assets stay in the local model directory and are excluded from the plugin archive.
 
 ## v0.2.1: attention autocast
 

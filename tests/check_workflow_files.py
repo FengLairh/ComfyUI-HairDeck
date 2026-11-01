@@ -1,11 +1,15 @@
 """Check GUI link/widget serialization against ComfyUI's actual node contracts."""
+import argparse
 import json
 from pathlib import Path
 
 import requests
 
 root = Path(__file__).resolve().parents[1]
-contracts = requests.get('http://127.0.0.1:8189/object_info', timeout=15).json()
+parser = argparse.ArgumentParser()
+parser.add_argument('--url', default='http://127.0.0.1:8189')
+args = parser.parse_args()
+contracts = requests.get(args.url.rstrip('/') + '/object_info', timeout=15).json()
 for path in (root / 'example_workflows').glob('*.json'):
     if path.name.endswith('.api.json'):
         continue

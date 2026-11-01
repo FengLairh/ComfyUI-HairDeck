@@ -1,19 +1,28 @@
-v0.2.1 修复启用 xFormers 时生成头发失败的精度报错：`query/key: float32, value: bfloat16`。
+v0.3.0 增加自定义基础头模支持，工作流仍为三个节点：模型加载 → 生成头发 → 输出保存。
 
-模型的 Q/K 归一化会产生 FP32；此前的适配层没有执行原始 PyTorch SDPA 的自动精度转换。本版在调用 ComfyUI 注意力后端前按当前 autocast 精度统一 Q/K/V，继续使用所选后端。
+- 使用 `scripts/import_head.py` 将自己的 FBX 转换为统一头部坐标系中的参考网格和头部 VRM 预设，保留网格及 UV，并绑定到基准角色头骨。
+- 输出保存节点新增可选的“基础头模”：`auto` 使用本机默认，`upstream` 使用原始参考头模，也可选择已导入的预设。
+- GLB、VRM 和动画使用同一份头模；切换输出设置可复用已有生成结果。查看 GLB 中的头模时，请开启“GLB 包含参考头模”。
+- 中英文 README 已加入导入步骤；发布 ZIP 包含通用工具和三节点模板。
 
-- 新增 BF16 / FP16、自注意力 / 交叉注意力、三维输入及关闭 autocast 时的 FP32 回归检查。
-- 已在发生报错的原始环境复测：ComfyUI 0.43.0、PyTorch 2.9.1+cu130、xFormers 0.0.33.post2、RTX 3090 24GB。
-- 原完整工作流约 46 秒执行成功，生成 152 张发片和 3 条骨骼链；GLB、VRM、五张内嵌工作流的 PNG 及 3 秒 H.264 动画均通过文件检查。
-- 同时通过 ComfyUI 0.30.0、PyTorch 2.8.0+cu129、RTX 5060 Ti 16GB 的 PyTorch 注意力回归检查。
+已在 Windows / ComfyUI 0.43.0 / RTX 3090 / xFormers 上实测：本地 FBX 导入、三节点完整生成、静态 GLB、VRM 和 90 帧动画均通过。完整流程约 32 秒；GLB 与导入网格、VRM 与头模预设的几何一致性检查通过。新增五项 CPU 路径与预设选择检查。
 
-**更新方法：** 安装本页附件 `ComfyUI-HairDeck-0.2.1.zip`，或在插件目录执行 `git pull`，然后重启 ComfyUI。已有三节点工作流可继续使用，模型无需重新下载。
+### 使用自己的头模
+
+在 `ComfyUI` 目录使用其 Python 运行（需要已安装便携 Blender 和 VRM 插件）：
+
+```bash
+python custom_nodes/ComfyUI-HairDeck/scripts/import_head.py "path/to/MyHead.fbx" --models-dir models/hairdeck --name MyHead --make-default
+```
+
+刷新 ComfyUI 后，在输出节点选择 `auto` 或 `MyHead`。资源写入 `models/hairdeck/heads/MyHead/`。模型权重无需重新下载。
+
+生成仍使用角色图片，头模用于输出装配和预览；导入采用统一缩放和平移，弹簧碰撞使用近似碰撞体。完整自定义角色装配尚未提供。
 
 ### 下载与文档
 
-- 最新插件修复包：本页附件 `ComfyUI-HairDeck-0.2.1.zip`，包含中英文 README 和三节点模板。
-- [完整资源与模型包（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa)。模型与工具的安装位置见 [README](https://github.com/FengLairh/ComfyUI-HairDeck#离线模型整合包)。
-- [完整三节点示例下载](https://github.com/FengLairh/ComfyUI-HairDeck/releases/download/v0.2.0/HairDeck-ThreeNode-Example-v0.2.0.zip)：可在 v0.2.1 中继续使用。
+- 最新插件：本页附件 `ComfyUI-HairDeck-0.3.0.zip`，内含导入工具、中英文说明和三个工作流模板。
+- [完整资源与模型包（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa)。
 - [中文说明](https://github.com/FengLairh/ComfyUI-HairDeck#readme) · [English README](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/README.en.md) · [官方模型地址](https://github.com/FengLairh/ComfyUI-HairDeck#official-models) · [验证范围](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/VALIDATION.md)
 
-代码 ZIP 不含模型权重和 Blender。第三方代码及模型保留各自许可，详见 THIRD_PARTY_NOTICES.md。
+用户 FBX 和转换资源按原资产许可使用，保存在各自的本地模型目录。插件代码包只包含通用接入代码，不包含用户模型、模型权重或 Blender。

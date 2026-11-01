@@ -135,7 +135,8 @@
         false,
         false,
         true,
-        ""
+        "",
+        "auto"
       ]
     }
   ],

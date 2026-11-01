@@ -138,11 +138,29 @@ Each default example workflow contains exactly three nodes. Image upload is buil
 Advanced inputs accept external IMAGE/MASK connections. The GLB output retains the standard `FILE_3D_GLB` type and can optionally connect to the built-in Preview3D node.
 
 Show bone lines (显示骨骼线) controls geometry/animation visualization. Skinning and spring-bone properties are stored in the VRM.
-VRM export currently uses the upstream example avatar; fitting arbitrary custom avatars is not yet supported.
+VRM export uses the upstream example avatar by default and also supports the custom head profiles described below. Fitting complete custom avatars is not yet supported.
 
 Enable Generate spring bones (生成弹簧骨骼) in the generation node before saving VRM or animation output. You can disable it for static GLB output.
 For the transparency MASK, 1 means transparent and 0 means retained; when no mask is connected, the uploaded image's alpha channel is used.
 The nodes process one image at a time. Use the ComfyUI queue and seed increments for multiple generations.
+
+### Custom base heads
+
+Run this command from `ComfyUI` using its Python to import an FBX. Portable Blender and its VRM add-on must already be installed:
+
+```bash
+python custom_nodes/ComfyUI-HairDeck/scripts/import_head.py "path/to/MyHead.fbx" --models-dir models/hairdeck --name MyHead --make-default
+```
+
+Refresh ComfyUI, select `auto` or `MyHead` in Base Head (基础头模) on the output node, and enable GLB reference head (GLB 包含参考头模).
+`auto` uses the locally configured default; `upstream` uses the original reference head. The workflow still has three nodes, and switching heads reuses generated hair.
+
+The importer applies uniform scale and translation to the training head frame, retains mesh geometry and UVs, and creates a gray reference head plus a head-only VRM profile rigidly bound to the reference avatar's head bone.
+GLB, VRM, and animation use the same head. Generation uses the character image; the selected head is used for output assembly and previews. Spring collisions use the existing approximate colliders.
+Use `--scale-adjust` and `--offset X Y Z` for scale and head-frame position adjustments. Use a new profile name when reimporting; existing profiles are not overwritten.
+
+Assets are stored in `models/hairdeck/heads/MyHead/`; `heads/active.json` records the local default.
+FBX and converted assets retain their source permissions and are stored separately in the model directory. The plugin source archive includes only the generic importer. No model weights need to be downloaded again.
 
 ## Example workflows
 

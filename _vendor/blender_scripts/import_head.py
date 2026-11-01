@@ -104,7 +104,7 @@ def main():
             bpy.ops.vrm.convert_material_to_mtoon1(material_name=mat.name)
             mat.vrm_addon_extension.mtoon1.pbr_metallic_roughness.base_color_factor = (.55, .55, .55, 1.)
             mat.vrm_addon_extension.mtoon1.extensions.vrmc_materials_mtoon.shade_color_factor = (.33, .33, .33)
-    relative = destination.relative_to(root).as_posix()
+    relative = (Path('heads') / job['name']).as_posix()
     body = dict(source_body, key=job['name'], file_tag='custom_head', vrm=relative + '/avatar.vrm',
                 head_mesh=relative + '/head.glb',
                 vrm_meta=dict(title=job['name'], author='User-provided model; author unspecified', licenseName='Other',
