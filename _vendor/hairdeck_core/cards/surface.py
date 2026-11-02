@@ -31,6 +31,7 @@ def grouped_normals(vertices, faces, groups):
 
 
 def tangent_frame(vertices, faces, normal, uv):
+    normal = unit(np.asarray(normal, dtype=np.float64))
     tri, tex = vertices[faces], uv[faces]
     e1, e2 = tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]
     d1, d2 = tex[:, 1] - tex[:, 0], tex[:, 2] - tex[:, 0]
@@ -49,6 +50,7 @@ def tangent_frame(vertices, faces, normal, uv):
     axis = np.eye(3)[np.argmin(np.abs(normal), axis=1)]
     tangent[missing] = np.cross(axis[missing], normal[missing])
     tangent = unit(tangent)
+    tangent = unit(tangent - normal * np.sum(normal * tangent, axis=1, keepdims=True))
     handedness = np.where(np.sum(np.cross(normal, tangent) * bitangent, axis=1) < 0, -1., 1.)
     return np.column_stack([tangent, handedness])
 

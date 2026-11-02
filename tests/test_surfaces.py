@@ -116,6 +116,12 @@ class SurfaceTests(unittest.TestCase):
         for name in ('vchain', 'vseg', 'vw', 'vseg2', 'valpha'):
             np.testing.assert_array_equal(optimized[name], original[name][source])
 
+    def test_rounded_normals_keep_tangents_orthogonal(self):
+        vertices = np.array([[0., 0, 0], [1., 0, 0], [0., 1, 0]])
+        normal = np.tile(surface.unit(np.array([[1., 0., .0001]]))[0] * 1.000001, (3, 1))
+        tangent = surface.tangent_frame(vertices, np.array([[0, 1, 2]]), normal, vertices[:, :2])
+        np.testing.assert_allclose((surface.unit(normal) * tangent[:, :3]).sum(1), 0, atol=1e-7)
+
 
 class MaterialTests(unittest.TestCase):
     def test_textures_embedded_and_previews_read_the_same_pixels(self):
