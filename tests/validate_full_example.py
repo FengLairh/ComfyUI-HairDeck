@@ -56,7 +56,8 @@ def main():
     summary = dict(workflow_nodes=3, device=info['device'], elapsed_seconds=info['elapsed_seconds'],
                    hair_cards=len(cards), generated_chains=len(chains), vrm_spring_groups=vrm['n_spring_groups'],
                    vrm_validation=True, glb_vertices=len(hair.vertices), images=images, video=video,
-                   preprocess_cache_hit=manifest['preprocess_cache_hit'])
+                   preprocess_cache_hit=manifest['preprocess_cache_hit'], geometry=manifest.get('geometry'),
+                   uv_mode=manifest.get('uv_mode'), material_preset=manifest.get('material_preset'))
     (root / 'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
     readme = '''# HairDeck 三节点完整示例
 
@@ -65,7 +66,7 @@ def main():
 3. 第一个节点加载模型；第二个节点直接选择/上传图片并生成；第三个节点选择保存格式并输出。
 
 所有结果集中在同一文件夹：GLB、VRM、动画、预览、蒙版、曲线、textures 贴图及 result.json 清单。
-VRM 使用上游示例角色，骨骼线仅是可视化；真正蒙皮与弹簧属性在 VRM。
+VRM 基础头模由工作流配置决定；自定义头模需安装对应预设。骨骼线仅是可视化，真正蒙皮与弹簧属性在 VRM。
 本例由原生 ComfyUI 队列实际生成，VRM 检查通过，视频为 480×480、90 帧、3 秒 H.264。
 '''
     (root / '使用说明.md').write_text(readme, encoding='utf-8')
@@ -73,9 +74,22 @@ VRM 使用上游示例角色，骨骼线仅是可视化；真正蒙皮与弹簧�
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as output:
         for path in root.rglob('*'):
             relative = path.relative_to(root)
-            if path.is_file() and (relative.parts[0] == 'textures' or path.suffix in ('.png', '.glb', '.vrm', '.mp4', '.npy', '.npz') or path.name in (
+            if path.is_file() and (relative.parts[0] == 'textures' or path.name.endswith('.check.json') or path.suffix in ('.png', '.glb', '.vrm', '.mp4', '.npy', '.npz') or path.name in (
                 'workflow.json', 'workflow.api.json', 'summary.json', 'result.json', 'cards.json', 'chains.json', '使用说明.md')):
-                output.write(path, root.name + '/' + relative.as_posix())
+                target = root.name + '/' + relative.as_posix()
+                if path.name.endswith('.check.json'):
+                    report = json.loads(path.read_text(encoding='utf-8'))
+                    report['vrm'] = path.name.replace('.check.json', '.vrm')
+                    report['rest_png'] = path.name.replace('.check.json', '.png')
+                    output.writestr(target, json.dumps(report, ensure_ascii=False, indent=2))
+                else:
+                    output.write(path, target)
+    with zipfile.ZipFile(archive) as packaged:
+        assert packaged.testzip() is None
+        for entry in manifest['files']:
+            base = Path(manifest['files'][0]['subfolder'].replace('\\', '/'))
+            relative = Path(entry['subfolder'].replace('\\', '/')).relative_to(base) / entry['filename']
+            assert root.name + '/' + relative.as_posix() in packaged.namelist()
     print('FULL_THREE_NODE_EXAMPLE_VALIDATED', json.dumps(summary, ensure_ascii=False), flush=True)
     print('EXAMPLE_ARCHIVE', archive, flush=True)
 

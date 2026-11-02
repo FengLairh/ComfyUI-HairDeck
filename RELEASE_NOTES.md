@@ -1,29 +1,26 @@
-v0.4.0 将 AI 模型加载改为 ComfyUI 常见的独立文件下拉框，工作流仍为三个节点。
+v0.5.0 完成导出网格、UV 和基础发丝材质优化，仍保持三个节点和六个独立模型文件选择。
 
-“模型加载”节点分别列出：
-
-1. 发片生成模型
-2. 发片 VAE
-3. 弹簧骨骼模型
-4. SAM 3 分割模型
-5. DINOv3 图像编码器
-6. BiRefNet 抠图模型
-
-每项显示实际文件名，并真正加载所选文件。支持独立模型目录、重命名权重和 `extra_model_paths.yaml` 配置。配套统计文件、标准头框、角色及自定义头模的目录放在高级选项“配套资源目录”中。
-
-**升级说明：** 原来的 `bundle: auto` 加载输入已替换。更新插件并重启、刷新 ComfyUI 后，请导入新版三节点模板，或重新添加“模型加载”节点并选择文件。已有模型和头模资源可继续使用，无需重新下载权重。
+- 清理发束内部封口，补齐 UV 接缝、法线和切线；拆分顶点复制原有骨骼权重。
+- 提供共享图集和独立 UV，支持 1K / 2K / 4K。
+- 提供体积发束、透明发片、纯色诊断和 UV 检查预设。
+- 输出发色/Alpha、法线、粗糙度、独立 Alpha、UV 布局和材质说明，并提供 glTF 金属粗糙度、Unity 金属光滑度两种打包图。
+- GLB 与 VRM 嵌入相同核心贴图，静态和动画预览读取这些材质。修复预览中的 Alpha 裁剪及透明覆盖问题。
+- 旧 v0.4 工作流可使用默认设置，刷新或导入新版模板可看到高级选项。
 
 ### 验证
 
-- 八项模型选择检查通过，覆盖六项文件解析、重命名、外部目录、路径限制、缓存失效及实际加载参数传递。
-- 已在 ComfyUI 0.43.0、RTX 3090、xFormers 上完成完整流程，约 32 秒生成 GLB、VRM 和 3 秒动画。
-- 同一输入的采样数据与 v0.3.0 参考结果完全一致，已有自定义头模正常使用。
-- 三份 GUI/API 模板及五张内嵌工作流的 PNG 均确认包含明确的模型文件选择。
+- 10 项 CPU 导出检查和 GPU Alpha 模式检查通过。
+- 本机新参考图完整流程约 40 秒完成；相同曲线的三角形从 29,356 减至 23,730，UV 零面积三角形从 5,896 降至 0。
+- 原项目公开示例约 36 秒完成，独立 UV、GLB、VRM 和 90 帧动画均通过检查。
+- 完整示例中的 PNG 可恢复三节点工作流，ZIP 内的模型、贴图及清单已检查齐全。
 
-### 下载与文档
+### 下载
 
-- 最新插件：本页附件 `ComfyUI-HairDeck-0.4.0.zip`，内含中英文说明、安装工具及新版三节点模板。
-- [完整资源与模型包（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa)。
-- [中文说明](https://github.com/FengLairh/ComfyUI-HairDeck#readme) · [English README](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/README.en.md) · [官方模型地址](https://github.com/FengLairh/ComfyUI-HairDeck#official-models) · [验证范围](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/VALIDATION.md)
+- `ComfyUI-HairDeck-0.5.0.zip`：插件、安装工具、中英文说明和工作流模板。
+- `HairDeck-UV-Material-Example-v0.5.0.zip`：使用上游公开输入和角色生成的完整示例，包含模型、贴图、动画和工作流。
+- [完整资源与模型包（夸克网盘）](https://pan.quark.cn/s/cfe2401c29aa)。既有权重可以继续使用。
+- [中文说明](https://github.com/FengLairh/ComfyUI-HairDeck#readme) · [English README](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/README.en.md) · [验证范围](https://github.com/FengLairh/ComfyUI-HairDeck/blob/main/VALIDATION.md)
 
-插件包不含模型权重、用户 FBX、转换后的私有头模或 Blender。
+材质贴图采用程序化生成并提取参考图基础发色。VRM 的 MToon 与 PBR 光照存在差异；目标 Unity/URP 工程中的材质、远距透明效果及性能仍需验收。头皮贴合和模型训练不属于本次改动。
+
+代码包及公开示例不包含用户提供的私人图片、头模或游戏参考资源。

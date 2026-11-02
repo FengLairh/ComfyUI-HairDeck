@@ -39,7 +39,10 @@
       "show_chains": false,
       "save_debug": true,
       "blender_path": "",
-      "head_profile": "auto"
+      "head_profile": "auto",
+      "uv_mode": "共享图集",
+      "texture_size": "2K",
+      "material_preset": "体积发束"
     }
   }
 }

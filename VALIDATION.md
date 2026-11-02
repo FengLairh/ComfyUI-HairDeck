@@ -1,4 +1,16 @@
-# Validation — 0.4.0
+# Validation — 0.5.0
+
+## v0.5.0: export surfaces and appearance
+
+- Ten CPU export tests pass: boundary-only caps, retained source positions, float32 UV validity, atlas padding/non-overlap, normals/tangent frames including rounded-normal input, original skin-weight copying, flat/empty cards, embedded texture pixels and Unity packing.
+- A GPU preview test reproduced and fixed missing alpha-mask behavior; OPAQUE, MASK and BLEND now pass an overlapping-quad visibility/coverage check. Preview images use the file's UVs, normals, tangents and textures rather than recoloring meshes.
+- Both shared volume and unique ribbon offline exports passed VRM structural checks and 90-frame animation decoding. UV-split vertices matched the original geometric binding exactly; GLB/VRM core texture pixels matched byte for byte.
+- The new local silver-haired reference completed the full three-node workflow on ComfyUI 0.43.0 / PyTorch 2.9.1+cu130 / RTX 3090 / xFormers in 40.16 seconds: 88 cards, 9 generated chains, 9 spring groups. From the same generated curves, triangle count fell from 29,356 to 23,730, and zero-area UV triangles from 5,896 to 0. The final surface has 15,659 vertices because UV/normal seams require splits.
+- The public upstream example completed in 36.17 seconds with unique UVs: 124 cards, 19 chains and 18 spring groups. Triangles fell from 42,010 to 33,884, with zero-area UV triangles reduced from 8,546 to 0.
+- Final GLB and VRM files were checked for finite unit normals/tangents, orthogonality, non-degenerate UVs, embedded matching textures and valid VRM skin/bone data. Seven 2K PNG maps/diagnostics were checked, including glTF G-roughness/B-metallic and Unity R-metallic/A-smoothness packing. Five PNG previews retain the three-node workflow, and videos decode to 90 frames over 3 seconds.
+- Old v0.4 save inputs ran with the new optional defaults in an isolated native instance. Ribbon and UV-check presets also ran through the actual ComfyUI queue.
+- The supplied game asset was analyzed locally to inform restrained detail and future geometry/Toon work; its meshes, textures and shader sources are not distributed with this plugin. Private head/image examples stay local. Public examples use the upstream input and avatar.
+- Preview uses a PBR renderer. VRM's MToon lighting differs; roughness is retained in the PBR fallback and standalone maps. Unity/URP appearance, mip-distance behavior and device performance are not yet validated in the target game project. Scalp fitting, candidate selection and model training remain later work.
 
 ## v0.4.0: explicit model files
 
