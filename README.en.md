@@ -1,5 +1,9 @@
 # ComfyUI-HairDeck
 
+![ComfyUI-HairDeck project hero](docs/images/hairdeck-github-hero-v001.png)
+
+*AI-designed cover based on the public example; actual plugin output is shown below.*
+
 [简体中文](README.md) | **English**
 
 Three native ComfyUI nodes: **Model Loader → Generate Hair → Save Outputs**.

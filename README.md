@@ -1,5 +1,9 @@
 # ComfyUI-HairDeck
 
+![ComfyUI-HairDeck 展示主图](docs/images/hairdeck-github-hero-v001.png)
+
+*基于公开示例制作的 AI 展示图；下方为插件实际生成截图。*
+
 **简体中文** | [English](README.en.md)
 
 三个原生 ComfyUI 节点：**模型加载 → 生成头发 → 输出保存**。
