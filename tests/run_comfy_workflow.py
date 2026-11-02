@@ -29,7 +29,8 @@ def static_prompt(image, seed=0, loader=None):
         '3': {'class_type': 'HairDeckSave', 'inputs': {'result': ['2', 0], 'format': 'GLB',
                                                     'filename_prefix': 'HairDeck/three_node_test', 'color': 'auto',
                                                     'show_head': False, 'show_chains': False,
-                                                    'save_debug': True, 'blender_path': '', 'head_profile': 'auto'}},
+                                                    'save_debug': True, 'blender_path': '', 'head_profile': 'auto',
+                                                    'uv_mode': '共享图集', 'texture_size': '2K', 'material_preset': '体积发束'}},
     }
 
 

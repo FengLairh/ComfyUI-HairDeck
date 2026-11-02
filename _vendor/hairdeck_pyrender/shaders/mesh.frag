@@ -42,6 +42,8 @@ struct PointLight {
 
 struct Material {
     vec3 emissive_factor;
+    int alpha_mode;
+    float alpha_cutoff;
 
 #ifdef USE_METALLIC_MATERIAL
     vec4 base_color_factor;
@@ -338,6 +340,16 @@ void main()
 #ifdef HAS_BASE_COLOR_TEX
     base_color = base_color * srgb_to_linear(texture(material.base_color_texture, uv_0));
 #endif
+#ifdef COLOR_0_LOC
+    base_color *= color_multiplier;
+#endif
+    float opacity = base_color.a;
+    if (material.alpha_mode == 1 && opacity < material.alpha_cutoff) {
+        discard;
+    }
+    if (material.alpha_mode != 2) {
+        opacity = 1.0;
+    }
 
     // Compute specular and diffuse colors
     vec3 dialectric_spec = vec3(min_roughness);
@@ -439,11 +451,7 @@ void main()
 #endif
     color.xyz += emissive * material.emissive_factor;
 
-#ifdef COLOR_0_LOC
-    color *= color_multiplier;
-#endif
-
-    frag_color = clamp(vec4(pow(color.xyz, vec3(1.0/2.2)), color.a * base_color.a), 0.0, 1.0);
+    frag_color = clamp(vec4(pow(color.xyz, vec3(1.0/2.2)), opacity), 0.0, 1.0);
 
 #else
     // TODO GLOSSY MATERIAL BRDF

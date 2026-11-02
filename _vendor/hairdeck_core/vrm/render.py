@@ -15,6 +15,8 @@ import trimesh
 from PIL import Image, ImageDraw
 
 from ..spring import vrm_spring as VS
+from .. import materials
+from ..cards.surface import normals as mesh_normals, unit
 
 BG = 236
 
@@ -48,18 +50,44 @@ def skinned_meshes(path):
         for pr in m['primitives']:
             p = VS.accessor(J, B, pr['attributes']['POSITION']).astype(np.float64)
             f = VS.accessor(J, B, pr['indices']).reshape(-1, 3).astype(np.int64)
+            attrs = pr['attributes']
+            flat = 'NORMAL' not in attrs
+            normal = VS.accessor(J, B, attrs['NORMAL']).astype(np.float64) if 'NORMAL' in attrs else mesh_normals(p, f)
+            tangent = VS.accessor(J, B, attrs['TANGENT']).astype(np.float64) if 'TANGENT' in attrs else None
+            uv = VS.accessor(J, B, attrs['TEXCOORD_0']).copy() if 'TEXCOORD_0' in attrs else None
+            if uv is not None:
+                uv[:, 1] = 1. - uv[:, 1]
+            color = VS.accessor(J, B, attrs['COLOR_0']).copy() if 'COLOR_0' in attrs else None
+            if color is not None and np.issubdtype(color.dtype, np.integer):
+                color = color.astype(np.float32) / np.iinfo(color.dtype).max
             ph = np.concatenate([p, np.ones((len(p), 1))], 1)
             if sk is not None and 'JOINTS_0' in pr['attributes']:
                 jj = VS.accessor(J, B, pr['attributes']['JOINTS_0']).astype(int)
                 ww = VS.accessor(J, B, pr['attributes']['WEIGHTS_0']).astype(np.float64)
                 X = np.einsum('vk,vkij,vj->vi', ww, M[jj], ph)[:, :3]
+                linear = np.einsum('vk,vkij->vij', ww, M[jj][:, :, :3, :3])
             else:
                 X = (ph @ G[ni].T)[:, :3]
-            mat = J['materials'][pr['material']] if 'material' in pr else {}
-            col = mat.get('pbrMetallicRoughness', {}).get('baseColorFactor', [0.8, 0.8, 0.8, 1])[:3]
-            out.append(dict(name=m.get('name', ''), V=X, F=f, colour=col))
-    hb = {h['bone']: h['node'] for h in J['extensions']['VRM']['humanoid']['humanBones']}
-    return out, G[hb['head']][:3, 3]
+                linear = np.broadcast_to(G[ni][:3, :3], (len(p), 3, 3))
+            normal = unit(np.einsum('vij,vj->vi', np.linalg.inv(linear).transpose(0, 2, 1), normal))
+            if tangent is not None:
+                xyz = np.einsum('vij,vj->vi', linear, tangent[:, :3])
+                xyz -= normal * np.sum(normal * xyz, axis=1, keepdims=True)
+                tangent = np.column_stack([unit(xyz), tangent[:, 3] * np.sign(np.linalg.det(linear))])
+            material = materials.gltf_material(J, B, pr.get('material'))
+            if flat:
+                triangles = X[f]
+                normal = np.repeat(unit(np.cross(triangles[:, 1] - triangles[:, 0], triangles[:, 2] - triangles[:, 0])), 3, axis=0)
+                X = triangles.reshape(-1, 3)
+                uv = uv[f].reshape(-1, 2) if uv is not None else None
+                color = color[f].reshape(-1, color.shape[1]) if color is not None else None
+                tangent = None
+                f = np.arange(len(X)).reshape(-1, 3)
+            out.append(dict(name=m.get('name', ''), V=X, F=f, N=normal, T=tangent, UV=uv, C=color,
+                            material=material, colour=material['baseColorFactor'][:3]))
+    vrm = J.get('extensions', {}).get('VRM')
+    hb = {h['bone']: h['node'] for h in vrm['humanoid']['humanBones']} if vrm else {}
+    return out, G[hb['head']][:3, 3] if 'head' in hb else None
 
 
 def colour_of(m):
@@ -84,11 +112,18 @@ def look(eye, target, up=(0, 1, 0)):
 def render(meshes, target, direction, half, size=360):
     """One orthographic view (half = half the view height) from target + direction, three directional lights."""
     pyrender = _pyrender()
-    s = pyrender.Scene(bg_color=[0, 0, 0, 0], ambient_light=[0.3] * 3)
+    s = pyrender.Scene(bg_color=[BG / 255.] * 3 + [1.], ambient_light=[0.3] * 3)
     for m in meshes:
-        tm = trimesh.Trimesh(m['V'], m['F'], process=False)
-        s.add(pyrender.Mesh.from_trimesh(tm, material=pyrender.MetallicRoughnessMaterial(
-            baseColorFactor=[*colour_of(m), 1.0], metallicFactor=0.0, roughnessFactor=0.85, doubleSided=True), smooth=False))
+        if 'material' in m:
+            mat = pyrender.MetallicRoughnessMaterial(**m['material'])
+            primitive = pyrender.Primitive(positions=np.asarray(m['V'], np.float32), normals=np.asarray(m['N'], np.float32),
+                                           tangents=None if m['T'] is None else np.asarray(m['T'], np.float32),
+                                           texcoord_0=m['UV'], color_0=m.get('C'), indices=m['F'], material=mat)
+            s.add(pyrender.Mesh([primitive]))
+        else:
+            tm = trimesh.Trimesh(m['V'], m['F'], process=False)
+            s.add(pyrender.Mesh.from_trimesh(tm, material=pyrender.MetallicRoughnessMaterial(
+                baseColorFactor=[*colour_of(m), 1.0], metallicFactor=0.0, roughnessFactor=0.85, doubleSided=True), smooth=False))
     d = np.asarray(direction, np.float64)
     d /= np.linalg.norm(d)
     eye = target + d * 6 * half
@@ -97,11 +132,9 @@ def render(meshes, target, direction, half, size=360):
     for dd, k in ((d + np.array([0.5, 0.7, 0]), 2.2), (d - np.array([0.6, 0, 0]), 0.8), (-d + np.array([0, 0.5, 0]), 1.0)):
         s.add(pyrender.DirectionalLight(color=np.ones(3), intensity=k), pose=look(target + dd, target))
     r = pyrender.OffscreenRenderer(size, size)
-    rgba, depth = r.render(s, flags=pyrender.RenderFlags.RGBA)
+    rgba, _ = r.render(s, flags=pyrender.RenderFlags.RGBA)
     r.delete()
-    # OSMesa returns RGB only: coverage from the depth buffer there
-    a = rgba[..., 3:4] / 255.0 if rgba.shape[-1] == 4 else (depth > 0)[..., None].astype(np.float64)
-    return Image.fromarray((rgba[..., :3] * a + BG * (1 - a)).astype(np.uint8))
+    return Image.fromarray(rgba[..., :3])
 
 
 def render_sheet(out, paths_):

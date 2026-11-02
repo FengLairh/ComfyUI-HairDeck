@@ -34,6 +34,8 @@ from ..spring.sim import bind, centreline, clean, deform, rot_y, rotdiff, skin
 from ..vrm.body import body as load_body
 from ..vrm.render import look
 from .head_proxy import canonical
+from .. import materials
+from ..cards import surface
 
 FPS, DUR, EVERY = 60, 3.0, 2
 DRAG, GRAVITY, HIT = 0.4, 0.0, 0.02  # the spring-group parameters of the VRM export (blender/vrm_hair.py)
@@ -134,10 +136,12 @@ def flat_mesh(V, F, colour, double=True):
     return pyrender.Mesh([prim])
 
 
-def preview(cards_json, chains_json, colour, out, show_chains=False, body=None):
+def preview(cards_json, chains_json, colour, out, show_chains=False, body=None, appearance=None):
     """Simulate and render one hairstyle -> out (mp4); returns the summary dict. colour: sRGB (3,); chains_json: path or
     '-'; body: a body file (default the default body of hairdeck.vrm.body)."""
     pyrender = _pyrender()
+    asset = materials.load(appearance) if appearance is not None else None
+    hair_material = pyrender.MetallicRoughnessMaterial(**materials.render_kwargs(asset.material, asset.directory)) if asset else None
     t_start = time.time()
     colour = np.asarray(colour, np.float64)
     bd = load_body(body)
@@ -162,20 +166,24 @@ def preview(cards_json, chains_json, colour, out, show_chains=False, body=None):
     Vs, Fs, off = [], [], 0
     ch, sg, wt, sg2, al = [], [], [], [], []
     rigid_mismatch = 0
-    for seq, sh in cards:
-        v, f = card_mesh_vf(seq, sh)
+    if asset and len(asset.mesh.card_offsets) != len(cards) + 1:
+        raise ValueError('Appearance surface does not match the generated cards.')
+    for ci, (seq, sh) in enumerate(cards):
+        v, f = card_mesh_vf(seq, sh) if asset is None else asset.mesh.card(ci)[:2]
         v = v * m
+        source = np.arange(len(v)) if asset is None else asset.mesh.card(ci)[4]
+        binding_vertices = v if asset is None else card_mesh_vf(seq, sh)[0] * m
         n = len(v)
         cc = int(skin([centreline(seq[:, :3]) * m], chains, W)[0][0]) if chains else -1
         kk, ww, kk2, aa = np.zeros(n, int), np.zeros(n), np.zeros(n, int), np.ones(n)
-        if cc >= 0:
-            bb = bind([v], [chains[cc]], W)
+        if cc >= 0 and n:
+            bb = bind([binding_vertices], [chains[cc]], W)
             if (bb[0] < 0).any():
                 rigid_mismatch += 1
                 cc = -1
             else:
-                kk, ww = bb[1], bb[2]
-                kk2, aa = (bb[3], bb[4]) if len(bb) == 5 else (kk.copy(), np.ones(n))
+                kk, ww = bb[1][source], bb[2][source]
+                kk2, aa = (bb[3][source], bb[4][source]) if len(bb) == 5 else (kk.copy(), np.ones(n))
         ch.append(np.full(n, cc))
         sg.append(kk)
         wt.append(ww)
@@ -209,15 +217,33 @@ def preview(cards_json, chains_json, colour, out, show_chains=False, body=None):
     fdir = f'{os.path.splitext(out)[0]}_frames'
     os.makedirs(fdir, exist_ok=True)
     t0 = time.time()
+    if asset:
+        gltf_uv = asset.mesh.UV.copy()
+        gltf_uv[:, 1] = 1. - gltf_uv[:, 1]
+    if bd.get('head_mesh'):
+        head_doc, head_binary = materials.read_glb(bd['head_mesh'])
+        head_mat = head_doc['meshes'][0]['primitives'][0].get('material')
+        head_material = pyrender.MetallicRoughnessMaterial(**materials.gltf_material(head_doc, head_binary, head_mat))
+    else:
+        head_material = pyrender.MetallicRoughnessMaterial(baseColorFactor=[.42, .42, .42, 1.], roughnessFactor=.9)
     for i, fr in enumerate(frames):
-        s = pyrender.Scene(bg_color=[0, 0, 0, 0], ambient_light=[0.28] * 3)
+        s = pyrender.Scene(bg_color=[*(BG / 255.).tolist(), 1.], ambient_light=[0.28] * 3)
         s.add(pyrender.OrthographicCamera(xmag=half, ymag=half, znear=0.01, zfar=40 * half), pose=look(tgt + d * 8 * half, tgt))
         for dd, kk in ((d + np.array([-0.5, 0.8, 0]), 2.4), (d + np.array([0.8, 0, 0]), 0.8), (-d + np.array([0, 0.5, 0]), 1.2)):
             s.add(pyrender.DirectionalLight(color=np.ones(3), intensity=kk), pose=look(tgt + dd, tgt))
-        s.add(flat_mesh(X[fr], F, colour))
+        if asset:
+            normal = surface.grouped_normals(X[fr], F, asset.mesh.G)
+            tangent = surface.tangent_frame(X[fr], F, normal, gltf_uv)
+            primitive = pyrender.Primitive(positions=X[fr].astype(np.float32), normals=normal.astype(np.float32),
+                                           tangents=tangent.astype(np.float32), texcoord_0=asset.mesh.UV.astype(np.float32),
+                                           indices=F, material=hair_material)
+            s.add(pyrender.Mesh([primitive]))
+        else:
+            s.add(flat_mesh(X[fr], F, colour))
         head_vertices = np.einsum('ij,mj->mi', R[fr], proxy_V - piv) + piv
         head_shape = trimesh.Trimesh(head_vertices, proxy_F, process=False)
-        head_material = pyrender.MetallicRoughnessMaterial(baseColorFactor=[.72, .72, .72, 1.], roughnessFactor=.8)
+        if isinstance(proxy.visual, trimesh.visual.TextureVisuals):
+            head_shape.visual = proxy.visual.copy()
         s.add(pyrender.Mesh.from_trimesh(head_shape, material=head_material, smooth=True))
         if show_chains:
             for (heads, _), c in zip(sim, chains):
@@ -225,10 +251,8 @@ def preview(cards_json, chains_json, colour, out, show_chains=False, body=None):
                     sp = trimesh.creation.icosphere(subdivisions=1, radius=0.006)
                     sp.apply_translation(q)
                     s.add(flat_mesh(np.asarray(sp.vertices), np.asarray(sp.faces), np.array([0.95, 0.45, 0.1]), False))
-        rgba, depth = r.render(s, flags=pyrender.RenderFlags.RGBA)
-        # OSMesa returns RGB only: coverage from the depth buffer there
-        a = rgba[..., 3:4] / 255.0 if rgba.shape[-1] == 4 else (depth > 0)[..., None].astype(np.float64)
-        im = Image.fromarray((rgba[..., :3] * a + BG * (1 - a)).astype(np.uint8))
+        rgba, _ = r.render(s, flags=pyrender.RenderFlags.RGBA)
+        im = Image.fromarray(rgba[..., :3])
         ImageDraw.Draw(im).text((8, 8), f't = {t[fr]:.2f} s   head yaw {yaw_deg(t[fr]):+.0f} deg   max hair motion vs head '
                                          f'{disp[fr].max() * 100:.1f} cm', fill=(40, 40, 40))
         im.save(f'{fdir}/{i:04d}.png')
@@ -241,7 +265,7 @@ def preview(cards_json, chains_json, colour, out, show_chains=False, body=None):
     t_enc = time.time() - t0
     shutil.rmtree(fdir, ignore_errors=True)
     return dict(out=out, frames=len(frames), fps=FPS // EVERY, seconds=round(len(frames) / (FPS // EVERY), 2), n_cards=len(cards),
-                n_chains=len(chains), cards_on_chains=int(sum(1 for c in ch if c[0] >= 0)),
+                n_chains=len(chains), cards_on_chains=int(sum(1 for c in ch if len(c) and c[0] >= 0)),
                 bind_mismatch_rigid=rigid_mismatch, chain_info=sinfo, collider_pushes=int(sum(x['pushes'] for x in sinfo)),
                 max_motion_cm=round(float(disp.max() * 100), 2), mean_motion_cm=round(float(disp.mean() * 100), 3),
                 meters_per_head_unit=m, face_width_m=W, sec=dict(sim=round(t_sim, 2), render=round(t_render, 2),
@@ -256,8 +280,9 @@ def main():
     ap.add_argument('out', help='output mp4')
     ap.add_argument('--chains_visible', action='store_true', help='draw the chain joints')
     ap.add_argument('--body', default=None, help='body file (default: hairdeck.vrm.body.default_path())')
+    ap.add_argument('--appearance', default=None, help='shared export appearance descriptor')
     a = ap.parse_args()
-    res = preview(a.cards_json, a.chains_json, [float(x) for x in a.colour.split(',')], a.out, a.chains_visible, a.body)
+    res = preview(a.cards_json, a.chains_json, [float(x) for x in a.colour.split(',')], a.out, a.chains_visible, a.body, a.appearance)
     print('PREVIEW', json.dumps(res))
 
 

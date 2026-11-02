@@ -24,7 +24,9 @@ def main():
     summary = history['outputs']['3']['hairdeck_summary']
     assert isinstance(summary, list) and len(summary) == 1 and '保存完成' in summary[0]
     for entry in manifest['files']:
-        assert (root / entry['filename']).is_file(), entry['filename']
+        base = Path(manifest['files'][0]['subfolder'].replace('\\', '/'))
+        relative = Path(entry['subfolder'].replace('\\', '/')).relative_to(base)
+        assert (root / relative / entry['filename']).is_file(), entry['filename']
     model = next(root.glob('hair_*.glb'))
     scene = trimesh.load(str(model), force='scene')
     hair = scene.geometry['hair_cards']
@@ -58,21 +60,22 @@ def main():
     (root / 'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
     readme = '''# HairDeck 三节点完整示例
 
-1. 安装 v0.2 节点和模型，把 input.png 复制到 ComfyUI/input/ 并命名为 HairDeck_example.png。
+1. 安装 v0.5 节点和模型，把 input.png 复制到 ComfyUI/input/ 并命名为工作流中的输入文件名。
 2. 导入 workflow.json，或将 preview / preprocess PNG 拖进 ComfyUI；图片内嵌的工作流只有三个节点。
 3. 第一个节点加载模型；第二个节点直接选择/上传图片并生成；第三个节点选择保存格式并输出。
 
-所有结果集中在同一文件夹：GLB、VRM、动画、预览、蒙版、曲线及 result.json 清单。
+所有结果集中在同一文件夹：GLB、VRM、动画、预览、蒙版、曲线、textures 贴图及 result.json 清单。
 VRM 使用上游示例角色，骨骼线仅是可视化；真正蒙皮与弹簧属性在 VRM。
 本例由原生 ComfyUI 队列实际生成，VRM 检查通过，视频为 480×480、90 帧、3 秒 H.264。
 '''
     (root / '使用说明.md').write_text(readme, encoding='utf-8')
     archive = root.parent / (root.name + '.zip')
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as output:
-        for path in root.iterdir():
-            if path.suffix in ('.png', '.glb', '.vrm', '.mp4', '.npy') or path.name in (
-                'workflow.json', 'workflow.api.json', 'summary.json', 'result.json', 'cards.json', 'chains.json', '使用说明.md'):
-                output.write(path, root.name + '/' + path.name)
+        for path in root.rglob('*'):
+            relative = path.relative_to(root)
+            if path.is_file() and (relative.parts[0] == 'textures' or path.suffix in ('.png', '.glb', '.vrm', '.mp4', '.npy', '.npz') or path.name in (
+                'workflow.json', 'workflow.api.json', 'summary.json', 'result.json', 'cards.json', 'chains.json', '使用说明.md')):
+                output.write(path, root.name + '/' + relative.as_posix())
     print('FULL_THREE_NODE_EXAMPLE_VALIDATED', json.dumps(summary, ensure_ascii=False), flush=True)
     print('EXAMPLE_ARCHIVE', archive, flush=True)
 

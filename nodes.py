@@ -109,13 +109,23 @@ class HairDeckSave(io.ComfyNode):
                                                  tooltip='VRM 导出使用；留空时自动查找模型包中的便携工具。'),
                                  io.Combo.Input('head_profile', display_name='基础头模', optional=True,
                                                 options=heads.choices(model_files.resources().values()), default='auto',
-                                                tooltip='auto 使用本机默认头模；upstream 使用原始参考头模。')],
+                                                tooltip='auto 使用本机默认头模；upstream 使用原始参考头模。'),
+                                 io.Combo.Input('uv_mode', display_name='UV 模式', optional=True, advanced=True,
+                                                options=list(output.UV_MODES), default='共享图集',
+                                                tooltip='共享图集复用发束纹理；独立展开为各束分配独立区域，便于绘制和烘焙。'),
+                                 io.Combo.Input('texture_size', display_name='贴图尺寸', optional=True, advanced=True,
+                                                options=list(output.TEXTURE_SIZES), default='2K'),
+                                 io.Combo.Input('material_preset', display_name='发丝材质', optional=True, advanced=True,
+                                                options=list(output.MATERIAL_PRESETS), default='体积发束',
+                                                tooltip='体积发束保留厚度；透明发片输出双面薄片；纯色诊断用于检查几何。')],
                          hidden=[io.Hidden.prompt, io.Hidden.extra_pnginfo],
                          outputs=[io.File3DGLB.Output(display_name='GLB 模型'), io.String.Output(display_name='结果目录')])
 
     @classmethod
-    def execute(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path, head_profile='auto'):
-        saved = output.save(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path, head_profile)
+    def execute(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path, head_profile='auto',
+                uv_mode='共享图集', texture_size='2K', material_preset='体积发束'):
+        saved = output.save(cls, result, format, filename_prefix, color, show_head, show_chains, save_debug, blender_path, head_profile,
+                            uv_mode, texture_size, material_preset)
         return io.NodeOutput(Types.File3D(str(saved.model)), str(saved.directory), ui=saved.ui)
 
     @classmethod

@@ -547,6 +547,8 @@ class Renderer(object):
 
             # Bind other uniforms
             b = 'material.{}'
+            program.set_uniform(b.format('alpha_mode'), {'OPAQUE': 0, 'MASK': 1, 'BLEND': 2}[material.alphaMode])
+            program.set_uniform(b.format('alpha_cutoff'), material.alphaCutoff)
             program.set_uniform(b.format('emissive_factor'),
                                 material.emissiveFactor)
             if isinstance(material, MetallicRoughnessMaterial):
@@ -567,7 +569,7 @@ class Renderer(object):
             # Set blending options
             if material.alphaMode == 'BLEND':
                 glEnable(GL_BLEND)
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+                glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
             else:
                 glEnable(GL_BLEND)
                 glBlendFunc(GL_ONE, GL_ZERO)
@@ -700,7 +702,7 @@ class Renderer(object):
         trans_nodes = []
         for node in scene.mesh_nodes:
             mesh = node.mesh
-            if mesh.is_transparent:
+            if any(p.material is not None and p.material.alphaMode == 'BLEND' for p in mesh.primitives):
                 trans_nodes.append(node)
             else:
                 solid_nodes.append(node)

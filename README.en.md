@@ -172,6 +172,22 @@ Use `--scale-adjust` and `--offset X Y Z` for scale and head-frame position adju
 Assets are stored in `models/hairdeck/heads/MyHead/`; `heads/active.json` records the local default.
 FBX and converted assets retain their source permissions and are stored separately in the model directory. The plugin source archive includes only the generic importer. No model weights need to be downloaded again.
 
+## UVs, textures, and materials (v0.5)
+
+Use the advanced settings on Save Outputs:
+
+- **UV Mode (UV 模式)**: Shared Atlas reuses eight strand variants. Unique UVs allocate separate regions per card for baking/painting, with size-aware packing and gutters.
+- **Texture Size (贴图尺寸)**: 1K, 2K, or 4K; the default is 2K.
+- **Hair Material (发丝材质)**: Volume retains thickness with restrained fine detail; Ribbon uses double-sided sheets and alpha masking; Solid and UV Check are diagnostic presets.
+
+Export surfaces remove internal caps and include UV seams, normals, and tangents. Split vertices inherit the original skin weights, so generated curves can be reused.
+The `textures/` directory contains base color/alpha, normal, roughness, separate alpha, UV layout, and a material manifest. GLB and VRM embed the same core images; static and animated previews read the exported material data.
+
+Two packing conventions are provided: `metallic_roughness.png` uses G=roughness and B=metallic; `unity_metallic_smoothness.png` uses R=metallic and A=smoothness for standard URP Lit slots.
+Textures are procedural, using the reference image's sampled base hair color. VRM's MToon lighting differs from PBR; roughness is available for the PBR fallback and other engines. Material appearance and performance still require validation in the target Unity/URP project.
+
+Existing v0.4 workflows use the new defaults. Refresh ComfyUI and import an updated template to expose the new controls.
+
 ## Example workflows
 
 Drag [01_静态发片_GLB.json](example_workflows/01_静态发片_GLB.json) or [02_弹簧骨骼_VRM_动画.json](example_workflows/02_弹簧骨骼_VRM_动画.json) into ComfyUI.

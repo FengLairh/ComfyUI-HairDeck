@@ -42,6 +42,7 @@ from ..infer.glb import srgb_to_linear
 from . import body as B
 from .check import check
 from .prep import prepare
+from .. import materials
 
 RELEASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCRIPTS = os.path.join(RELEASE, 'blender_scripts')
@@ -135,7 +136,7 @@ def vrm_path(out_dir, seed, body=None):
     return f"{out_dir}/{B.body(body)['file_tag']}_seed{seed}.vrm"
 
 
-def export_vrm(out_dir, seed, colour_srgb, body=None, render=True):
+def export_vrm(out_dir, seed, colour_srgb, body=None, render=True, appearance=None):
     """One saved sample -> its VRM (see the module docstring). colour_srgb: hair colour, sRGB 0..1 (the image pipeline's
     info.json 'hair_color'); body: a body file (default hairdeck.vrm.body.default_path()). Returns dict(vrm, rest_png,
     ok, problems (of hairdeck.vrm.check), n_cards, n_chains_in, n_chains, n_spring_groups, hair_verts, removed_hair,
@@ -148,7 +149,7 @@ def export_vrm(out_dir, seed, colour_srgb, body=None, render=True):
     run, prep = f'{d}/run', f'{d}/prep'
     os.makedirs(prep, exist_ok=True)
     t = time.time()
-    n_cards, n_chains = prepare(out_dir, seed, bd, srgb_to_linear(colour_srgb), run, prep, f'{d}/prep.log')
+    n_cards, n_chains = prepare(out_dir, seed, bd, srgb_to_linear(colour_srgb), run, prep, f'{d}/prep.log', appearance)
     T['prep'] = time.time() - t
     gen = f"{d}/{B.file_name('gen', bd)}"
     if os.path.exists(gen):  # the VRM of an earlier export of this sample
@@ -158,6 +159,8 @@ def export_vrm(out_dir, seed, colour_srgb, body=None, render=True):
         raise RuntimeError('Blender finished without writing the VRM; see ' + f'{d}/blender.log')
     ref = orig = f"{d}/{B.file_name('orig', bd)}"
     patched = patch_render_queue(gen, ref) if os.path.exists(ref) else []
+    if appearance is not None:
+        materials.patch_glb(gen, appearance)
     if os.path.exists(ref) and not os.path.exists(orig):
         os.symlink(ref, orig)
     t = time.time()
@@ -193,7 +196,7 @@ def inputs_sha256(files, *extra):
     return h.hexdigest()
 
 
-def turn_preview(out_dir, seed, colour_srgb, show_chains=False, body=None):
+def turn_preview(out_dir, seed, colour_srgb, show_chains=False, body=None, appearance=None):
     """out_dir/turn_seed{s}.mp4 (turn_seed{s}_chains.mp4 with the chain joints drawn) from cards_seed{s}.json and
     chains_seed{s}.json (none if missing); an existing video is reused (cached=True) when its json records the same
     inputs (inputs_sha256 of the cards, the chains, the body file and the colour). Returns the summary of
@@ -204,13 +207,19 @@ def turn_preview(out_dir, seed, colour_srgb, show_chains=False, body=None):
     out = f'{out_dir}/{tag}.mp4'
     cards, ch, body_file = f'{out_dir}/cards_seed{seed}.json', f'{out_dir}/chains_seed{seed}.json', B.body_path(body)
     colour = ','.join('%.6f' % x for x in colour_srgb)
-    key = inputs_sha256([cards, ch, body_file], colour)
+    render_sources = [os.path.join(RELEASE, name) for name in (
+        'hairdeck_core/vis/turn_preview.py', 'hairdeck_core/vrm/render.py', 'hairdeck_core/materials.py',
+        'hairdeck_core/cards/surface.py', 'hairdeck_pyrender/renderer.py',
+        'hairdeck_pyrender/shaders/mesh.vert', 'hairdeck_pyrender/shaders/mesh.frag')]
+    key = inputs_sha256([cards, ch, body_file, *render_sources] + (materials.input_files(appearance) if appearance else []), colour)
     if os.path.exists(out) and os.path.exists(f'{out_dir}/{tag}.json'):
         prev = json.load(open(f'{out_dir}/{tag}.json'))
         if prev.get('inputs_sha256') == key:
             return dict(prev, cached=True)
     cmd = [sys.executable, os.path.join(os.path.dirname(RELEASE), 'scripts', 'render_entry.py'), 'motion', cards, ch if os.path.exists(ch) else '-', colour, out,
            '--body', body_file] + (['--chains_visible'] if show_chains else [])
+    if appearance is not None:
+        cmd.extend(['--appearance', str(appearance)])
     _run(cmd, f'{out_dir}/{tag}.log', _env(True))
     res = _last_json(f'{out_dir}/{tag}.log', 'PREVIEW') or {}
     res['wall_sec'] = round(time.time() - t, 2)

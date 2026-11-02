@@ -26,3 +26,7 @@ jobs:
         run: python -m unittest discover -s tests -p test_model_bundle.py -v
       - name: Check local head profile paths
         run: python -m unittest discover -s tests -p test_head_profiles.py -v
+      - name: Install export-test dependencies
+        run: python -m pip install numpy pillow trimesh scipy
+      - name: Check UV, topology, tangents, material embedding and binding
+        run: python -m unittest discover -s tests -p test_surfaces.py -v

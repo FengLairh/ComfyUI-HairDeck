@@ -5,6 +5,7 @@ import trimesh
 
 from ..cards.mesh import card_uv
 from ..vis.head_proxy import head_proxy
+from .. import materials
 
 
 def hair_color(img, hair):
@@ -87,11 +88,17 @@ def cards_vf(cards):
     return out
 
 
-def hair_trimesh(cards, color_srgb):
+def hair_trimesh(cards, color_srgb, appearance=None):
     """All cards as one mesh: hairdeck.cards.mesh.card_mesh_vf's mesh per card (cards_vf; cards with < 3 points skipped
     and degenerate faces dropped, as cards_to_mesh does), per-card UVs (card_uv), a PBR material with the hair colour
     (glTF wants linear colour) and a per-card brightness in COLOR_0 (0.78..1, fixed seed) so neighbouring cards stay
     visible."""
+    if appearance is not None:
+        asset = materials.load(appearance)
+        mesh = asset.mesh
+        return trimesh.Trimesh(mesh.V, mesh.F, vertex_normals=mesh.N, process=False,
+                               visual=trimesh.visual.TextureVisuals(uv=mesh.UV,
+                               material=trimesh.visual.material.PBRMaterial(name='hair', baseColorFactor=[1., 1., 1., 1.])))
     rng = np.random.default_rng(0)
     V, F, UV, C = [], [], [], []
     off = 0

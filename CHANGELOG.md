@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+- Build clean export surfaces with boundary caps, shared or unique UV atlases, explicit normals/tangents, and original skin bindings preserved through UV splits.
+- Generate procedural base-color/alpha, normal and roughness textures; embed the same images in GLB and VRM and expose volume, ribbon, solid and UV-check presets.
+- Render embedded material data in static and animated previews; fix OPAQUE/MASK/BLEND handling and vertex-color interpretation in the vendored preview renderer.
+- Keep the three-node workflow and six explicit model selectors. Material changes are output settings and reuse generated curves.
+
 ## 0.4.0
 
 - Replace the automatic model-bundle selector with six explicit ComfyUI model-file selectors in the loader node.

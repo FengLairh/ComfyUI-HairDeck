@@ -27,6 +27,7 @@ import numpy as np
 from ..cards.mesh import card_mesh_vf, card_uv
 from ..spring.sim import ASSIGN, BLEND, RAMP, bind, centreline, clean, skin
 from .body import file_name
+from .. import materials
 
 
 def to_blender(p, fit):
@@ -62,7 +63,7 @@ def card_list(cards):
     return out
 
 
-def prep(h, key, cards, pred, fit):
+def prep(h, key, cards, pred, fit, meshes=None):
     """Mesh, UVs and skinning with chains. cards: [(seq, shape id)] and pred: [{'joints', 'stiffness'}], both in the
     dataset frame. Returns (arrays, summary); raises ValueError when no chain binds a card."""
     W = fit['w'] / fit['s']  # face width in meters (Blender units)
@@ -73,26 +74,37 @@ def prep(h, key, cards, pred, fit):
     chains = [dict(J=to_blender(J, fit)) for J in chains_ds]
     Vs, Fs, vcard, vch, vsg, vw, vsg2, val, UVs = [], [], [], [], [], [], [], [], []
     off, mismatch = 0, 0
+    Ns = []
     for ci, (seq, sh) in enumerate(cards):
-        v, f = card_mesh_vf(seq, sh)
+        if meshes is None:
+            v, f = card_mesh_vf(seq, sh)
+            uv = card_uv(seq)
+            source = np.arange(len(v))
+            binding_vertices = to_blender(v, fit)
+        else:
+            v, f, uv, normal, source = meshes[ci]
+            binding_vertices = to_blender(card_mesh_vf(seq, sh)[0], fit)
+            Ns.append(np.stack([fit['sx'] * normal[:, 0], fit['sz'] * normal[:, 2], normal[:, 1]], -1))
+            if fit['sx'] * fit['sz'] > 0:
+                f = f[:, ::-1]
         vb = to_blender(v, fit)
         cl = to_blender(centreline(seq[:, :3]), fit)  # 16 arc-length samples, root first
         c = int(skin([cl], chains, W)[0][0])  # card -> chain (-1 = rigid)
         n = len(vb)
         k, w, k2, al = np.zeros(n, int), np.zeros(n), np.zeros(n, int), np.ones(n)
-        if c >= 0:
-            b = bind([vb], [chains[c]], W)  # mesh vertices (root-first rows) against the assigned chain only
+        if c >= 0 and n:
+            b = bind([binding_vertices], [chains[c]], W)  # duplicate UV vertices inherit the original geometric binding
             if (b[0] < 0).any():  # the vertex-based lower-60% test disagrees with the centreline: keep the card rigid
                 mismatch += 1
                 c = -1
             else:
-                k, w = b[1], b[2]
+                k, w = b[1][source], b[2][source]
                 if len(b) == 5:
-                    k2, al = b[3], b[4]
+                    k2, al = b[3][source], b[4][source]
                 else:
                     k2 = k.copy()
         Vs.append(vb)
-        UVs.append(card_uv(seq))  # per-vertex UVs in card_mesh_vf's vertex order
+        UVs.append(uv)
         Fs.append(f + off)
         off += n
         vcard.append(np.full(n, ci))
@@ -104,7 +116,7 @@ def prep(h, key, cards, pred, fit):
     V, F = np.concatenate(Vs), np.concatenate(Fs)
     vch, vsg, vw, vsg2, val = map(np.concatenate, (vch, vsg, vw, vsg2, val))
     vcard = np.concatenate(vcard)
-    card_ch = np.array([vch[vcard == ci][0] for ci in range(len(cards))])
+    card_ch = np.array([vch[vcard == ci][0] if np.any(vcard == ci) else -1 for ci in range(len(cards))])
     used = sorted(set(card_ch[card_ch >= 0].tolist()))  # drop chains that bind no card
     remap = np.full(len(chains) + 1, -1)
     remap[used] = np.arange(len(used))
@@ -117,6 +129,8 @@ def prep(h, key, cards, pred, fit):
                chain_J_ds=np.concatenate(chains_ds), stiffness=np.array(stiff), W=W, fit_s=fit['s'],
                fit_t=np.array(fit['t']), fit_sx=fit['sx'], fit_sz=fit['sz'],
                head_joint=to_blender(np.array(fit['head_joint']), fit), ASSIGN=ASSIGN, RAMP=RAMP, BLEND=BLEND)
+    if meshes is not None:
+        out['N'] = np.concatenate(Ns)
     blended = (vch >= 0) & (vsg2 != vsg) & (val < 1)
     info = dict(h=h, key=key, n_cards=len(cards), n_cards_on_chain=int((card_ch >= 0).sum() - mismatch),
                 n_cards_bind_mismatch=mismatch, n_verts=len(V), n_faces=len(F), frac_verts_on_chain=float((vch >= 0).mean()),
@@ -127,15 +141,23 @@ def prep(h, key, cards, pred, fit):
     return out, info
 
 
-def prep_no_chains(h, key, cards, fit):
+def prep_no_chains(h, key, cards, fit, meshes=None):
     """Every card on the head bone: the mesh, UVs and mapping of prep() with empty chain arrays."""
     W = fit['w'] / fit['s']
     Vs, Fs, UVs, vcard, off = [], [], [], [], 0
+    Ns = []
     for ci, (seq, sh) in enumerate(cards):
-        v, f = card_mesh_vf(seq, sh)
+        if meshes is None:
+            v, f = card_mesh_vf(seq, sh)
+            uv = card_uv(seq)
+        else:
+            v, f, uv, normal, _ = meshes[ci]
+            Ns.append(np.stack([fit['sx'] * normal[:, 0], fit['sz'] * normal[:, 2], normal[:, 1]], -1))
+            if fit['sx'] * fit['sz'] > 0:
+                f = f[:, ::-1]
         Vs.append(to_blender(v, fit))
         Fs.append(f + off)
-        UVs.append(card_uv(seq))
+        UVs.append(uv)
         vcard.append(np.full(len(v), ci))
         off += len(v)
     V = np.concatenate(Vs)
@@ -146,12 +168,14 @@ def prep_no_chains(h, key, cards, fit):
                chain_J=z3, chain_J_ds=z3, stiffness=np.zeros(0), W=W, fit_s=fit['s'], fit_t=np.array(fit['t']),
                fit_sx=fit['sx'], fit_sz=fit['sz'], head_joint=to_blender(np.array(fit['head_joint']), fit),
                ASSIGN=ASSIGN, RAMP=RAMP, BLEND=BLEND)
+    if meshes is not None:
+        out['N'] = np.concatenate(Ns)
     info = dict(h=h, key=key, n_cards=len(cards), n_verts=n, n_faces=int(len(out['F'])), n_chains=0,
                 note='no chains: every card on the head bone')
     return out, info
 
 
-def prepare(out_dir, seed, body, colour, run, prep_dir, log=None):
+def prepare(out_dir, seed, body, colour, run, prep_dir, log=None, appearance=None):
     """One saved result (out_dir/cards_seed{s}.json, chains_seed{s}.json; head frame; without the chains file, e.g. from
     image_to_hair.py --no-chains, every card goes on the head bone) on a body (hairdeck.vrm.body):
     writes the files listed in the module docstring; colour: linear RGB of the hair material, stored with 6 decimals.
@@ -167,13 +191,22 @@ def prepare(out_dir, seed, body, colour, run, prep_dir, log=None):
     json.dump({str(h): dict(pred=[dict(c, joints=c['joints'].tolist()) for c in pred], gt=[], n_cards=len(cards))},
               open(f'{run}/chains.json', 'w'))
     lines, out = [], None
+    meshes = None
+    if appearance is not None:
+        asset = materials.load(appearance)
+        if len(asset.mesh.card_offsets) != len(cards) + 1:
+            raise ValueError('Appearance surface does not match the generated cards.')
+        meshes = []
+        for index in range(len(cards)):
+            v, f, uv, normal, source = asset.mesh.card(index)
+            meshes.append(((v - b) / k, f, uv, normal, source))
     if [c for c in pred if len(clean(c['joints'])) >= 2]:
         try:
-            out, info = prep(h, body['key'], card_list(cards), pred, body['fit'])
+            out, info = prep(h, body['key'], card_list(cards), pred, body['fit'], meshes)
         except ValueError as e:  # every chain dropped (none binds a card): concatenation of nothing
             lines.append(f'PREP_FALLBACK {e}')
     if out is None:
-        out, info = prep_no_chains(h, body['key'], card_list(cards), body['fit'])
+        out, info = prep_no_chains(h, body['key'], card_list(cards), body['fit'], meshes)
     out['colour'] = np.array([float('%.6f' % x) for x in colour])
     os.makedirs(prep_dir, exist_ok=True)
     np.savez(f"{prep_dir}/{file_name('prep', body)}.npz", **out)

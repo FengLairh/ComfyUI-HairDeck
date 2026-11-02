@@ -3,20 +3,12 @@ import sys
 
 import numpy as np
 from PIL import Image, ImageDraw
-import trimesh
-
-from ..infer.glb import srgb_to_linear
-from ..vrm.render import render
+from ..vrm.render import render, skinned_meshes
 
 
 def main():
-    output, source, rgb = sys.argv[1:]
-    color = [float(value) for value in rgb.split(',')]
-    scene = trimesh.load(source, force='scene')
-    meshes = []
-    for name, mesh in scene.geometry.items():
-        selected = [.65, .65, .67] if 'head' in name.lower() else [1., .45, .04] if 'chain' in name.lower() else color
-        meshes.append(dict(name='Hair_gen', V=mesh.vertices, F=mesh.faces, colour=srgb_to_linear(selected)))
+    output, source = sys.argv[1:]
+    meshes, _ = skinned_meshes(source)
     vertices = np.concatenate([mesh['V'] for mesh in meshes])
     low, high = vertices.min(0), vertices.max(0)
     target = (low + high) / 2

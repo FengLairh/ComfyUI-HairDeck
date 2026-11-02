@@ -18,7 +18,8 @@ Their license files remain in the downloaded tool archives/directories.
 Local source adaptations: private package namespaces; per-execution workspace paths;
 ComfyUI model ownership and attention dispatch; movable VAE normalization buffers;
 removal of inference decorators because ComfyUI owns inference execution; standard-library
-resource lookup; Windows/Linux one-shot Blender export and rendering.
+resource lookup; Windows/Linux one-shot Blender export and rendering; shared export UV/material data;
+preview texture, alpha-mode and vertex-color handling.
 The checkpoint formats and the original card/chain representations are retained.
 
 Weights are fetched from the HairDeck release repository and the user-selectable public

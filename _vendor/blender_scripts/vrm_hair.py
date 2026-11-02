@@ -205,6 +205,10 @@ def add_generated_hair(arm, P, col_uuids, center, colour, info):
         me.loops.foreach_get('vertex_index', vi)
         uvl.data.foreach_set('uv', np.asarray(P['UV'], np.float32)[vi].reshape(-1))
     me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
+    if 'N' in P:
+        normals = np.asarray(P['N']) @ np.asarray(arm.matrix_world)[:3, :3]
+        normals /= np.maximum(np.linalg.norm(normals, axis=1, keepdims=True), 1e-20)
+        me.normals_split_custom_set_from_vertices(normals.tolist())
     obj = bpy.data.objects.new('Hair_gen', me)
     (arm.users_collection[0] if arm.users_collection else bpy.context.scene.collection).objects.link(obj)
     obj.parent = arm
