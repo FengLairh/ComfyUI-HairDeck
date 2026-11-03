@@ -182,9 +182,9 @@ Use the advanced settings on Save Outputs:
 
 - **UV Mode (UV 模式)**: Shared Atlas reuses eight strand variants. Unique UVs allocate separate regions per card for baking/painting, with size-aware packing and gutters.
 - **Texture Size (贴图尺寸)**: 1K, 2K, or 4K; the default is 2K.
-- **Hair Material (发丝材质)**: Volume retains thickness with restrained fine detail; Ribbon uses double-sided sheets and alpha masking; Solid and UV Check are diagnostic presets.
+- **Hair Material (发丝材质)**: Volume retains thickness, smooths along each strand and keeps cross-section creases, with subdued normal detail and highlights to avoid a cylindrical appearance; Ribbon uses double-sided sheets and alpha masking; Solid and UV Check are diagnostic presets.
 
-Export surfaces remove internal caps and include UV seams, normals, and tangents. Split vertices inherit the original skin weights, so generated curves can be reused.
+Export surfaces remove internal caps and include UV seams, normals, and tangents. Vertices split at UV seams and cross-section creases inherit the original skin weights, so generated curves can be reused. Preserving creases increases the vertex count without changing strand positions or triangle counts.
 The `textures/` directory contains base color/alpha, normal, roughness, separate alpha, UV layout, and a material manifest. GLB and VRM embed the same core images; static and animated previews read the exported material data.
 
 Two packing conventions are provided: `metallic_roughness.png` uses G=roughness and B=metallic; `unity_metallic_smoothness.png` uses R=metallic and A=smoothness for standard URP Lit slots.

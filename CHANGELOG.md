@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+- Smooth strand normals along their length while preserving the four cross-section creases, avoiding the rounded cylindrical shading introduced in 0.5.0.
+- Reduce volume normal-map strength and specular highlights, including the root/tip caps.
+- Preserve generated curves, original surface positions, triangle counts, UV layout and skin-weight correspondence. Crease splits increase the exported vertex count.
+- Add regression checks for cross-section creases, longitudinal smoothing, restrained volume texture detail and exported normals.
+
 ## 0.5.0
 
 - Build clean export surfaces with boundary caps, shared or unique UV atlases, explicit normals/tangents, and original skin bindings preserved through UV splits.

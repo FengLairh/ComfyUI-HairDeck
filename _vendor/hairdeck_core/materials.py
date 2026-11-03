@@ -33,10 +33,10 @@ def texture_patch(width, height, kind, variant, color, preset):
     fibre = .5 + .5 * np.cos(phase)
     shade = (.80 + .28 * v) * (.91 + .12 * fibre) * (.95 + .05 * np.sin(variant * 2.13))
     roughness = np.broadcast_to(.59 - .09 * v + .06 * (1 - fibre), (height, width)).copy()
-    strength = .1 if preset == 'volume' else .22
+    strength = .025 if preset == 'volume' else .22
     if preset == 'volume':
         shade = (.86 + .18 * v) * (.96 + .05 * fibre) * (.96 + .04 * np.sin(variant * 2.13))
-        roughness = np.broadcast_to(.72 - .04 * v + .025 * (1 - fibre), (height, width)).copy()
+        roughness = np.broadcast_to(.82 - .02 * v + .015 * (1 - fibre), (height, width)).copy()
     nx = strength * np.sin(phase)
     # V in the GLB texture coordinates points down the PNG; normals use that exported tangent frame.
     ny = -strength * np.sin(phase) * (.12 * 2 * np.pi * np.cos(2 * np.pi * v + variant)) / frequency
@@ -49,7 +49,7 @@ def texture_patch(width, height, kind, variant, color, preset):
     if kind != 'surface':
         shade = np.full((height, width), .80 if kind == 'root' else 1.03)
         normal = np.broadcast_to([0., 0., 1.], (height, width, 3)).copy()
-        roughness[:] = .6 if kind == 'root' else .5
+        roughness[:] = (.84 if kind == 'root' else .80) if preset == 'volume' else (.6 if kind == 'root' else .5)
         alpha[:] = 1
     if preset in ('solid', 'checker'):
         shade = np.ones((height, width))
@@ -122,6 +122,7 @@ def create(cards, color, uv_mode, resolution, preset, directory, work):
                   channel_layouts={'metallic_roughness.png': 'G=roughness, B=metallic (0); R is unused',
                                    'unity_metallic_smoothness.png': 'R=metallic (0), A=smoothness (1-roughness)'},
                   normal_convention='glTF tangent space, +Y', strand_direction='editor +V: root to tip; exported glTF strand direction: -bitangent',
+                  surface_shading='longitudinal smooth / cross-section creases' if preset != 'ribbon' else 'ribbon',
                   geometry=report, layout=mesh.layout)
     (directory / 'material.json').write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding='utf-8')
     mesh.save(work / 'surface.npz')

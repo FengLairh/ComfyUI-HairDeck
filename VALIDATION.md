@@ -1,4 +1,12 @@
-# Validation — 0.5.0
+# Validation — 0.5.1
+
+## v0.5.1: strand shading
+
+- Twelve CPU export tests pass. New regressions cover distinct normals at cross-section creases, matching normals across a side's width, longitudinal smoothing, retained original positions and restrained volume highlights. Exported GLB normals match the surface data.
+- Re-exporting the same 103-card blue reference preserves every original vertex position and all 42,650 triangles. Crease splits increase the vertex count from 27,579 to 43,752. Float32 UVs have no zero-area triangles; normals and tangents remain finite, unit-length and orthogonal.
+- Before/after GLB views use the same source cards, camera and renderer; no inference or shape parameters are changed in this comparison.
+- Both references passed the full installed ComfyUI 0.43.0 / PyTorch 2.9.1+cu130 / RTX 3090 workflow. The blue reference completed in 52.17 seconds with 103 cards and 18 generated chains; the public example completed in 38.11 seconds with 124 cards and 19 chains. Their generated tokens exactly match the previous outputs. Blue-reference card and chain files are byte-identical.
+- Exported GLB and VRM retain the creases, finite unit normals/tangents and orthogonal frames; embedded core texture pixels match between formats. Both VRMs passed structural validation, both animations decode to 90 frames / 3 seconds, and all five PNGs retain a three-node workflow. The public example uses shared UVs and 33,884 triangles.
 
 ## v0.5.0: export surfaces and appearance
 

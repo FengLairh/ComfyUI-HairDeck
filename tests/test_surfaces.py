@@ -27,6 +27,30 @@ def card(count=8, x=0., thickness=.005):
 
 
 class SurfaceTests(unittest.TestCase):
+    def test_cross_section_creases_keep_longitudinal_normals_smooth(self):
+        seq, shape = card(count=16, thickness=.015)
+        seq[:, 2] = .02 * np.sin(np.linspace(0, np.pi, len(seq)))
+        mesh = surface.build([(seq, shape)])
+        raw, _ = card_mesh_vf(seq, shape)
+        np.testing.assert_array_equal(mesh.V, raw[mesh.S])
+        # Each interior corner belongs to two sides, with independent normals.
+        ring = len(seq) // 2
+        for side in range(4):
+            index = 4 * ring + side
+            values = mesh.N[mesh.S == index]
+            self.assertEqual(len(values), 2)
+            self.assertLess(float(np.dot(*values)), .95)
+        # Both width endpoints of a side share a normal; neighbouring rings blend.
+        for face in mesh.F:
+            source = mesh.S[face]
+            if (source // 4).min() == (source // 4).max():
+                continue  # root/tip caps
+            for i in np.unique(source // 4):
+                values = mesh.N[face][source // 4 == i]
+                if len(values) == 2:
+                    np.testing.assert_allclose(values[0], values[1], atol=1e-7)
+            self.assertGreater(float(np.min(mesh.N[face] @ mesh.N[face].T)), .9)
+
     def test_boundary_caps_only_and_original_surface_positions(self):
         seq, shape = card()
         previous = seq.copy()
@@ -124,6 +148,14 @@ class SurfaceTests(unittest.TestCase):
 
 
 class MaterialTests(unittest.TestCase):
+    def test_volume_fibre_detail_and_highlights_stay_subtle(self):
+        for kind in ('surface', 'root', 'tip'):
+            patch = materials.texture_patch(64, 64, kind, 0, [.3, .15, .1], 'volume')
+            normal_x = (patch['normal.png'][..., 0].astype(float) / 255 * 2 - 1)
+            self.assertLess(np.abs(normal_x).max(), .04)
+            self.assertGreaterEqual(patch['roughness.png'].min(), round(.78 * 255))
+            self.assertTrue((patch['base_color.png'][..., 3] == 255).all())
+
     def test_textures_embedded_and_previews_read_the_same_pixels(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -137,6 +169,7 @@ class MaterialTests(unittest.TestCase):
             self.assertTrue({'NORMAL', 'TANGENT', 'TEXCOORD_0'} <= set(primitive['attributes']))
             normal = VS.accessor(doc, binary, primitive['attributes']['NORMAL'])
             tangent = VS.accessor(doc, binary, primitive['attributes']['TANGENT'])
+            np.testing.assert_allclose(normal, asset.mesh.N, atol=1e-6)
             np.testing.assert_allclose((normal*tangent[:, :3]).sum(1), 0, atol=1e-5)
             preview = materials.gltf_material(doc, binary, primitive['material'])
             for channel, name in asset.material['textures'].items():

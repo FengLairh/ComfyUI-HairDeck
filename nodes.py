@@ -117,7 +117,7 @@ class HairDeckSave(io.ComfyNode):
                                                 options=list(output.TEXTURE_SIZES), default='2K'),
                                  io.Combo.Input('material_preset', display_name='发丝材质', optional=True, advanced=True,
                                                 options=list(output.MATERIAL_PRESETS), default='体积发束',
-                                                tooltip='体积发束保留厚度；透明发片输出双面薄片；纯色诊断用于检查几何。')],
+                                                tooltip='体积发束保留厚度，沿长度平滑、截面保留棱角；透明发片输出双面薄片；纯色诊断用于检查几何。')],
                          hidden=[io.Hidden.prompt, io.Hidden.extra_pnginfo],
                          outputs=[io.File3DGLB.Output(display_name='GLB 模型'), io.String.Output(display_name='结果目录')])
 

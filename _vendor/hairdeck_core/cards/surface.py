@@ -89,35 +89,42 @@ def card_charts(seq, shape, card, ribbon=False):
         source = (4 * np.arange(count)[:, None] + np.array([0, 2])).reshape(-1)
         result = chart(vertices, faces, uv, normals(vertices, faces), [width, length], 'surface', card, source)
         return [result] if result is not None else []
-    # Welded side topology supplies smooth normals before the UV seam is split.
-    raw_faces = []
-    for i in range(1, count):
-        for side in range(4):
-            a, b, c, d = 4 * (i - 1) + side, 4 * i + side, 4 * i + (side + 1) % 4, 4 * (i - 1) + (side + 1) % 4
-            raw_faces.extend([[b, a, c], [d, c, a]])
-    raw_faces = clean_faces(raw, np.asarray(raw_faces))
-    centre = np.repeat(np.asarray(seq)[:, :3], 4, axis=0)
-    tri = raw[raw_faces]
-    orientation = np.sum(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]) *
-                         (tri.mean(axis=1) - centre[raw_faces].mean(axis=1)), axis=1)
-    raw_faces[orientation < 0] = raw_faces[orientation < 0, ::-1]
-    raw_normals = normals(raw, raw_faces)
-    indices = (4 * np.arange(count)[:, None] + np.array([0, 1, 2, 3, 0])).reshape(-1)
-    vertices = raw[indices]
-    faces = []
-    for i in range(1, count):
-        for side in range(4):
-            a, b = 5 * (i - 1) + side, 5 * i + side
-            faces.extend([[b, a, b + 1], [a + 1, b + 1, a]])
-    faces = np.asarray(faces)
-    tri = vertices[faces]
-    centre_split = np.repeat(np.asarray(seq)[:, :3], 5, axis=0)
-    inward = np.sum(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]) *
-                    (tri.mean(axis=1) - centre_split[faces].mean(axis=1)), axis=1) < 0
-    faces[inward] = faces[inward, ::-1]
+    # Give each cross-section side its own vertices/normals. UVs still occupy one
+    # chart, while longitudinal rings blend without rounding the profile corners.
+    vertices, faces, uv, side_normals, sources = [], [], [], [], []
+    centre = np.repeat(np.asarray(seq)[:, :3], 2, axis=0)
+    for side in range(4):
+        indices = (4 * np.arange(count)[:, None] + [side, (side + 1) % 4]).reshape(-1)
+        strip = raw[indices]
+        quads = []
+        for i in range(1, count):
+            a, b = 2 * (i - 1), 2 * i
+            quads.extend([[b, a, b + 1], [a + 1, b + 1, a]])
+        quads = np.asarray(quads, dtype=np.int64)
+        tri = strip[quads]
+        cross = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+        inward = np.sum(cross * (tri.mean(axis=1) - centre[quads].mean(axis=1)), axis=1) < 0
+        quads[inward] = quads[inward, ::-1]
+        cross[inward] *= -1
+        # The untriangulated quad supplies one normal contribution at either end;
+        # both width endpoints get the same normal, avoiding a rounded diagonal.
+        area = cross.reshape(count - 1, 2, 3).sum(axis=1)
+        ring_normal = np.zeros((count, 3))
+        ring_normal[:-1] += area
+        ring_normal[1:] += area
+        missing = np.flatnonzero(np.linalg.norm(ring_normal, axis=1) < 1e-14)
+        valid = np.flatnonzero(np.linalg.norm(area, axis=1) >= 1e-14)
+        for i in missing:
+            if len(valid):
+                ring_normal[i] = area[valid[np.argmin(np.abs(valid + .5 - i))]]
+        vertices.append(strip)
+        faces.append(quads + side * 2 * count)
+        side_normals.append(np.repeat(unit(ring_normal), 2, axis=0))
+        uv.append(np.column_stack([np.tile([side / 4, (side + 1) / 4], count), np.repeat(along, 2)]))
+        sources.append(indices)
+    vertices, faces, uv, normal, indices = map(np.concatenate, (vertices, faces, uv, side_normals, sources))
     perimeter = np.linalg.norm(rings - np.roll(rings, -1, axis=1), axis=2).sum(axis=1).mean()
-    uv = np.column_stack([np.tile(np.linspace(0, 1, 5), count), np.repeat(along, 5)])
-    result = [chart(vertices, faces, uv, raw_normals[indices], [float(perimeter), length], 'surface', card, indices)]
+    result = [chart(vertices, faces, uv, normal, [float(perimeter), length], 'surface', card, indices)]
     for index, kind, direction in [(0, 'root', seq[0, :3] - seq[1, :3]),
                                     (-1, 'tip', seq[-1, :3] - seq[-2, :3])]:
         vertices = rings[index]
