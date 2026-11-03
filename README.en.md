@@ -1,8 +1,8 @@
 # ComfyUI-HairDeck
 
-![ComfyUI-HairDeck project hero](docs/images/hairdeck-github-hero-v001.png)
+![ComfyUI-HairDeck project hero](docs/images/hairdeck-github-hero-v002.png)
 
-*AI-designed cover based on the public example; actual plugin output is shown below.*
+*AI-designed cover based on the v0.5.1 faceted-strand public example; actual plugin output is shown below.*
 
 [简体中文](README.md) | **English**
 

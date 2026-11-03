@@ -1,8 +1,8 @@
 # ComfyUI-HairDeck
 
-![ComfyUI-HairDeck 展示主图](docs/images/hairdeck-github-hero-v001.png)
+![ComfyUI-HairDeck 展示主图](docs/images/hairdeck-github-hero-v002.png)
 
-*基于公开示例制作的 AI 展示图；下方为插件实际生成截图。*
+*基于 v0.5.1 棱面发束公开示例制作的 AI 展示图；下方为插件实际生成截图。*
 
 **简体中文** | [English](README.en.md)
 
